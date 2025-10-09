@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 3000",
+    "socket": "tsx src/websocket/socket-server.ts",
     "build": "vite build",
     "serve": "vite preview",
     "test": "vitest run",
@@ -30,6 +31,8 @@
     "postcss": "^8.5.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.1.14",
     "vite-tsconfig-paths": "^5.1.4"
