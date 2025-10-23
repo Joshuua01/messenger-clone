@@ -128,7 +128,7 @@ function RouteComponent() {
               type="submit"
               disabled={!canSubmit}
               size={'lg'}
-              className="mt-2"
+              className="mt-2 font-bold"
             >
               {isSubmitting ? (
                 <>
