@@ -13,9 +13,11 @@ import { Route as DashboardRouteRouteImport } from './routes/_dashboard/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
-import { Route as DashboardSettingsIndexRouteImport } from './routes/_dashboard/settings/index'
-import { Route as DashboardChatIndexRouteImport } from './routes/_dashboard/chat/index'
+import { Route as DashboardSettingsRouteRouteImport } from './routes/_dashboard/settings/route'
+import { Route as DashboardChatRouteRouteImport } from './routes/_dashboard/chat/route'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as DashboardSettingsProfileRouteImport } from './routes/_dashboard/settings/profile'
+import { Route as DashboardSettingsAppearanceRouteImport } from './routes/_dashboard/settings/appearance'
 
 const DashboardRouteRoute = DashboardRouteRouteImport.update({
   id: '/_dashboard',
@@ -36,14 +38,14 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardSettingsIndexRoute = DashboardSettingsIndexRouteImport.update({
-  id: '/settings/',
-  path: '/settings/',
+const DashboardSettingsRouteRoute = DashboardSettingsRouteRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
-const DashboardChatIndexRoute = DashboardChatIndexRouteImport.update({
-  id: '/chat/',
-  path: '/chat/',
+const DashboardChatRouteRoute = DashboardChatRouteRouteImport.update({
+  id: '/chat',
+  path: '/chat',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
@@ -51,53 +53,83 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardSettingsProfileRoute =
+  DashboardSettingsProfileRouteImport.update({
+    id: '/profile',
+    path: '/profile',
+    getParentRoute: () => DashboardSettingsRouteRoute,
+  } as any)
+const DashboardSettingsAppearanceRoute =
+  DashboardSettingsAppearanceRouteImport.update({
+    id: '/appearance',
+    path: '/appearance',
+    getParentRoute: () => DashboardSettingsRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/chat': typeof DashboardChatRouteRoute
+  '/settings': typeof DashboardSettingsRouteRouteWithChildren
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
+  '/settings/appearance': typeof DashboardSettingsAppearanceRoute
+  '/settings/profile': typeof DashboardSettingsProfileRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/chat': typeof DashboardChatIndexRoute
-  '/settings': typeof DashboardSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/chat': typeof DashboardChatRouteRoute
+  '/settings': typeof DashboardSettingsRouteRouteWithChildren
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
+  '/settings/appearance': typeof DashboardSettingsAppearanceRoute
+  '/settings/profile': typeof DashboardSettingsProfileRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/chat': typeof DashboardChatIndexRoute
-  '/settings': typeof DashboardSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_dashboard': typeof DashboardRouteRouteWithChildren
+  '/_dashboard/chat': typeof DashboardChatRouteRoute
+  '/_dashboard/settings': typeof DashboardSettingsRouteRouteWithChildren
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/register': typeof AuthRegisterRoute
+  '/_dashboard/settings/appearance': typeof DashboardSettingsAppearanceRoute
+  '/_dashboard/settings/profile': typeof DashboardSettingsProfileRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/_dashboard/chat/': typeof DashboardChatIndexRoute
-  '/_dashboard/settings/': typeof DashboardSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/login'
-    | '/register'
-    | '/api/auth/$'
     | '/chat'
     | '/settings'
+    | '/login'
+    | '/register'
+    | '/settings/appearance'
+    | '/settings/profile'
+    | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register' | '/api/auth/$' | '/chat' | '/settings'
+  to:
+    | '/'
+    | '/chat'
+    | '/settings'
+    | '/login'
+    | '/register'
+    | '/settings/appearance'
+    | '/settings/profile'
+    | '/api/auth/$'
   id:
     | '__root__'
     | '/'
     | '/_dashboard'
+    | '/_dashboard/chat'
+    | '/_dashboard/settings'
     | '/_auth/login'
     | '/_auth/register'
+    | '/_dashboard/settings/appearance'
+    | '/_dashboard/settings/profile'
     | '/api/auth/$'
-    | '/_dashboard/chat/'
-    | '/_dashboard/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -138,18 +170,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_dashboard/settings/': {
-      id: '/_dashboard/settings/'
+    '/_dashboard/settings': {
+      id: '/_dashboard/settings'
       path: '/settings'
       fullPath: '/settings'
-      preLoaderRoute: typeof DashboardSettingsIndexRouteImport
+      preLoaderRoute: typeof DashboardSettingsRouteRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
-    '/_dashboard/chat/': {
-      id: '/_dashboard/chat/'
+    '/_dashboard/chat': {
+      id: '/_dashboard/chat'
       path: '/chat'
       fullPath: '/chat'
-      preLoaderRoute: typeof DashboardChatIndexRouteImport
+      preLoaderRoute: typeof DashboardChatRouteRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
     '/api/auth/$': {
@@ -159,17 +191,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_dashboard/settings/profile': {
+      id: '/_dashboard/settings/profile'
+      path: '/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof DashboardSettingsProfileRouteImport
+      parentRoute: typeof DashboardSettingsRouteRoute
+    }
+    '/_dashboard/settings/appearance': {
+      id: '/_dashboard/settings/appearance'
+      path: '/appearance'
+      fullPath: '/settings/appearance'
+      preLoaderRoute: typeof DashboardSettingsAppearanceRouteImport
+      parentRoute: typeof DashboardSettingsRouteRoute
+    }
   }
 }
 
+interface DashboardSettingsRouteRouteChildren {
+  DashboardSettingsAppearanceRoute: typeof DashboardSettingsAppearanceRoute
+  DashboardSettingsProfileRoute: typeof DashboardSettingsProfileRoute
+}
+
+const DashboardSettingsRouteRouteChildren: DashboardSettingsRouteRouteChildren =
+  {
+    DashboardSettingsAppearanceRoute: DashboardSettingsAppearanceRoute,
+    DashboardSettingsProfileRoute: DashboardSettingsProfileRoute,
+  }
+
+const DashboardSettingsRouteRouteWithChildren =
+  DashboardSettingsRouteRoute._addFileChildren(
+    DashboardSettingsRouteRouteChildren,
+  )
+
 interface DashboardRouteRouteChildren {
-  DashboardChatIndexRoute: typeof DashboardChatIndexRoute
-  DashboardSettingsIndexRoute: typeof DashboardSettingsIndexRoute
+  DashboardChatRouteRoute: typeof DashboardChatRouteRoute
+  DashboardSettingsRouteRoute: typeof DashboardSettingsRouteRouteWithChildren
 }
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
-  DashboardChatIndexRoute: DashboardChatIndexRoute,
-  DashboardSettingsIndexRoute: DashboardSettingsIndexRoute,
+  DashboardChatRouteRoute: DashboardChatRouteRoute,
+  DashboardSettingsRouteRoute: DashboardSettingsRouteRouteWithChildren,
 }
 
 const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
