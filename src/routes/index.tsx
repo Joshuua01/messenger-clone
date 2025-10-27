@@ -1,22 +1,23 @@
-import { ChatRoom } from '@/components/chat-room';
-import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { getSessionFn } from '@/lib/fn/auth-fn';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/')({
   component: App,
+  beforeLoad: async () => {
+    const session = await getSessionFn();
+    if (!session.session.data) {
+      throw redirect({ to: '/login' });
+    }
+    if (session.session.data) {
+      throw redirect({ to: '/chat' });
+    }
+  },
 });
 
 function App() {
-  const [username, setUsername] = useState<string>('Anonim');
-
-  useEffect(() => {
-    const name = prompt('Podaj swoją nazwę użytkownika:');
-    setUsername(name || 'Anonim');
-  }, []);
-
   return (
     <div>
-      <ChatRoom chatId="123" username={username} />
+      <h1>Welcome to MessClone!</h1>
     </div>
   );
 }
