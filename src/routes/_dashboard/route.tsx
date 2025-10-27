@@ -44,7 +44,7 @@ function RouteComponent() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-accent p-4">
+    <div className="flex min-h-screen max-h-screen bg-accent p-4">
       <aside className="flex flex-col items-center justify-between py-6 px-2 w-20">
         <div className="flex flex-col items-center gap-12">
           <MessageCircleHeart size={48} />

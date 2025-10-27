@@ -13,7 +13,6 @@ export const Route = createFileRoute('/_auth/register')({
 
 const defaultValues: RegisterForm = {
   name: '',
-  surname: '',
   email: '',
   password: '',
   confirmPassword: '',
@@ -27,12 +26,12 @@ function RouteComponent() {
       onSubmit: registerSchema,
     },
     onSubmit: async (values) => {
-      const { email, password, name, surname } = values.value;
+      const { email, password, name } = values.value;
       await authClient.signUp.email(
         {
           email: email,
           password: password,
-          name: name + ' ' + surname,
+          name: name,
         },
         {
           onSuccess: () => {
@@ -80,18 +79,6 @@ function RouteComponent() {
               type="text"
               autoComplete="given-name"
               placeholder="Enter your name..."
-            />
-          )}
-        </form.Field>
-
-        <form.Field name="surname">
-          {(field) => (
-            <FormField
-              field={field}
-              label="Surname"
-              type="text"
-              autoComplete="family-name"
-              placeholder="Enter your surname..."
             />
           )}
         </form.Field>

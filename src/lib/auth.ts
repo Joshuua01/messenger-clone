@@ -14,4 +14,12 @@ export const auth = betterAuth({
   },
   plugins: [reactStartCookies()],
   baseURL: 'http://localhost:3000',
+  user: {
+    changeEmail: {
+      enabled: true,
+    },
+    deleteUser: {
+      enabled: true,
+    },
+  },
 });
