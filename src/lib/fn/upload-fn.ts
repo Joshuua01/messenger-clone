@@ -1,15 +1,33 @@
 import { createServerFn } from '@tanstack/react-start';
 import z from 'zod';
 import { s3 } from '../s3';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 
 export const uploadImageFn = createServerFn({ method: 'POST' })
   .inputValidator(z.instanceof(FormData))
   .handler(async ({ data: formData }) => {
     const file = formData.get('file') as File;
+    const currentImage = formData.get('currentImage') as string | null;
     if (!file) {
       throw new Error('No file provided');
     }
+
+    if (currentImage) {
+      const urlParts = currentImage.split('/');
+      const oldImageName = urlParts[urlParts.length - 1];
+
+      const imageDelete = await s3.send(
+        new DeleteObjectCommand({
+          Bucket: process.env.S3_BUCKET_NAME!,
+          Key: oldImageName,
+        }),
+      );
+
+      if (imageDelete.$metadata.httpStatusCode !== 204) {
+        throw new Error('Old image deletion failed');
+      }
+    }
+
     const arrayBuffer = await file.arrayBuffer();
     const fileName = `${Date.now()}-${file.name}`;
 
@@ -26,10 +44,7 @@ export const uploadImageFn = createServerFn({ method: 'POST' })
       throw new Error('Image upload failed');
     }
 
-    const publicUrl = `${process.env.S3_ENDPOINT!.replace(
-      '9000',
-      '9001',
-    )}/browser/${process.env.S3_BUCKET_NAME}/${fileName}`;
+    const publicUrl = `${process.env.S3_ENDPOINT!}/${process.env.S3_BUCKET_NAME}/${fileName}`;
 
     return { url: publicUrl };
   });

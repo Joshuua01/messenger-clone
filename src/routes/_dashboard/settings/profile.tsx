@@ -1,4 +1,7 @@
-import { FormField } from '@/components/form-field';
+import { ChangeEmailForm } from '@/components/settings/change-email-form';
+import { ChangeNameForm } from '@/components/settings/change-name-form';
+import { ChangePasswordForm } from '@/components/settings/change-password-form';
+import { ChangeProfilePictureForm } from '@/components/settings/change-profile-picture-form';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,132 +21,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Spinner } from '@/components/ui/spinner';
-import { authClient, useSession } from '@/lib/auth-client';
-import { uploadImageFn } from '@/lib/fn/upload-fn';
-import {
-  changeEmailSchema,
-  changeNameSchema,
-  ChangePasswordForm,
-  changePasswordSchema,
-} from '@/lib/validation-schema';
+import { authClient } from '@/lib/auth-client';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
-import { useForm } from '@tanstack/react-form';
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
-import z from 'zod';
 
 export const Route = createFileRoute('/_dashboard/settings/profile')({
   component: RouteComponent,
 });
 
-const changePasswordValues: ChangePasswordForm = {
-  oldPassword: '',
-  newPassword: '',
-  confirmNewPassword: '',
-};
-
 function RouteComponent() {
-  const session = useSession();
   const navigation = useNavigate();
-  const changePasswordForm = useForm({
-    defaultValues: changePasswordValues,
-    validators: {
-      onSubmit: changePasswordSchema,
-    },
-    onSubmit: async (values) => {
-      const { oldPassword, newPassword } = values.value;
-      await authClient.changePassword(
-        {
-          currentPassword: oldPassword,
-          newPassword: newPassword,
-          revokeOtherSessions: true,
-        },
-        {
-          onSuccess: () => {
-            toast.success('Password changed successfully!');
-            navigation({ to: '/' });
-          },
-          onError: (ctx) => {
-            toast.error(ctx.error.message);
-          },
-        },
-      );
-    },
-  });
-  const changeNameForm = useForm({
-    defaultValues: {
-      name: session.data?.user.name || '',
-    },
-    validators: {
-      onSubmit: changeNameSchema,
-    },
-    onSubmit: async (values) => {
-      const { name } = values.value;
-      await authClient.updateUser(
-        {
-          name,
-        },
-        {
-          onSuccess: () => {
-            toast.success('Name updated successfully!');
-          },
-          onError: (ctx) => {
-            toast.error(ctx.error.message);
-          },
-        },
-      );
-    },
-  });
-  const changeEmailForm = useForm({
-    defaultValues: {
-      email: session.data?.user.email || '',
-    },
-    validators: {
-      onSubmit: changeEmailSchema,
-    },
-    onSubmit: async (values) => {
-      const { email } = values.value;
-      await authClient.changeEmail(
-        {
-          newEmail: email,
-        },
-        {
-          onSuccess: () => {
-            toast.success('Email updated successfully!');
-          },
-          onError: (ctx) => {
-            toast.error(ctx.error.message);
-          },
-        },
-      );
-    },
-  });
-  const uploadImageForm = useForm({
-    defaultValues: {
-      file: null as File | null,
-    },
-    validators: {
-      onSubmit: z.object({
-        file: z
-          .instanceof(File, { error: 'Please upload a valid file' })
-          .refine((file) => file.size < 5 * 1024 * 1024, 'File size too large'),
-      }),
-    },
-    onSubmit: async (values) => {
-      const formData = new FormData();
-      formData.append('file', values.value.file!);
-
-      let result;
-      try {
-        result = await uploadImageFn({ data: formData });
-      } catch (error: any) {
-        toast.error(`Image upload failed: ${error.message}`);
-        return;
-      }
-      console.log('Upload result:', result);
-    },
-  });
 
   const handleUserDeletion = async () => {
     await authClient.deleteUser({});
@@ -162,194 +50,17 @@ function RouteComponent() {
       <CardContent className="flex-1 overflow-hidden">
         <ScrollArea className="h-full w-full overflow-auto pr-2">
           <h1 className="text-xl font-bold">Profile Picture</h1>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              uploadImageForm.handleSubmit();
-            }}
-            className="flex flex-col gap-1 mt-4"
-          >
-            <uploadImageForm.Field name="file">
-              {(field) => (
-                <FormField
-                  field={field}
-                  label="Upload Profile Picture"
-                  type="file"
-                  currentImage={session.data?.user.image ?? undefined}
-                />
-              )}
-            </uploadImageForm.Field>
-            <uploadImageForm.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting]}
-            >
-              {([canSubmit, isSubmitting]) => (
-                <Button
-                  type="submit"
-                  disabled={!canSubmit}
-                  size={'lg'}
-                  className="mt-2 font-bold self-end"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Spinner /> Uploading...
-                    </>
-                  ) : (
-                    'Upload Picture'
-                  )}
-                </Button>
-              )}
-            </uploadImageForm.Subscribe>
-          </form>
+          <ChangeProfilePictureForm />
+
           <h1 className="text-xl font-bold">Reset password</h1>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              changePasswordForm.handleSubmit();
-            }}
-            className="flex flex-col gap-1 mt-4"
-          >
-            <changePasswordForm.Field name="oldPassword">
-              {(field) => (
-                <FormField
-                  field={field}
-                  label="Old Password"
-                  type="password"
-                  placeholder="Enter current password..."
-                  autoComplete="none"
-                />
-              )}
-            </changePasswordForm.Field>
+          <ChangePasswordForm />
 
-            <changePasswordForm.Field name="newPassword">
-              {(field) => (
-                <FormField
-                  field={field}
-                  label="New Password"
-                  type="password"
-                  placeholder="Enter the new password..."
-                />
-              )}
-            </changePasswordForm.Field>
-
-            <changePasswordForm.Field name="confirmNewPassword">
-              {(field) => (
-                <FormField
-                  field={field}
-                  label="Confirm New Password"
-                  type="password"
-                  placeholder="Enter the new password again..."
-                  autoComplete="none"
-                />
-              )}
-            </changePasswordForm.Field>
-
-            <changePasswordForm.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting]}
-            >
-              {([canSubmit, isSubmitting]) => (
-                <Button
-                  type="submit"
-                  disabled={!canSubmit}
-                  size={'lg'}
-                  className="mt-2 font-bold self-end"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Spinner /> Changing password...
-                    </>
-                  ) : (
-                    'Change password'
-                  )}
-                </Button>
-              )}
-            </changePasswordForm.Subscribe>
-          </form>
           <h1 className="text-xl font-bold">Change your name</h1>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              changeNameForm.handleSubmit();
-            }}
-            className="flex flex-col gap-1 mt-4"
-          >
-            <changeNameForm.Field name="name">
-              {(field) => (
-                <FormField
-                  field={field}
-                  label="Name"
-                  type="text"
-                  placeholder="Enter your new name..."
-                  autoComplete="name"
-                />
-              )}
-            </changeNameForm.Field>
+          <ChangeNameForm />
 
-            <changeNameForm.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting]}
-            >
-              {([canSubmit, isSubmitting]) => (
-                <Button
-                  type="submit"
-                  disabled={!canSubmit}
-                  size={'lg'}
-                  className="mt-2 font-bold self-end"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Spinner /> Updating name...
-                    </>
-                  ) : (
-                    'Update name'
-                  )}
-                </Button>
-              )}
-            </changeNameForm.Subscribe>
-          </form>
           <h1 className="text-xl font-bold">Change your email</h1>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              changeEmailForm.handleSubmit();
-            }}
-            className="flex flex-col gap-1 mt-4"
-          >
-            <changeEmailForm.Field name="email">
-              {(field) => (
-                <FormField
-                  field={field}
-                  label="Email"
-                  type="email"
-                  placeholder="Enter your new email..."
-                  autoComplete="email"
-                />
-              )}
-            </changeEmailForm.Field>
+          <ChangeEmailForm />
 
-            <changeEmailForm.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting]}
-            >
-              {([canSubmit, isSubmitting]) => (
-                <Button
-                  type="submit"
-                  disabled={!canSubmit}
-                  size={'lg'}
-                  className="mt-2 font-bold self-end"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Spinner /> Updating email...
-                    </>
-                  ) : (
-                    'Update email'
-                  )}
-                </Button>
-              )}
-            </changeEmailForm.Subscribe>
-          </form>
           <div className="flex items-center justify-between mt-6">
             <h1 className="text-xl font-bold">Delete account</h1>
             <AlertDialog>

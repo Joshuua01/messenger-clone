@@ -42,6 +42,6 @@ export const changeEmailSchema = z.object({
 
 export type RegisterForm = z.infer<typeof registerSchema>;
 export type LoginForm = z.infer<typeof loginSchema>;
-export type ChangePasswordForm = z.infer<typeof changePasswordSchema>;
+// export type ChangePasswordForm = z.infer<typeof changePasswordSchema>;
 export type ChangeNameForm = z.infer<typeof changeNameSchema>;
 export type ChangeEmailForm = z.infer<typeof changeEmailSchema>;
