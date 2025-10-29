@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { authClient, useSession } from '@/lib/auth-client';
+import { uploadImageFn } from '@/lib/fn/upload-fn';
 import {
   changeEmailSchema,
   changeNameSchema,
@@ -30,6 +31,7 @@ import { ScrollArea } from '@radix-ui/react-scroll-area';
 import { useForm } from '@tanstack/react-form';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
+import z from 'zod';
 
 export const Route = createFileRoute('/_dashboard/settings/profile')({
   component: RouteComponent,
@@ -117,6 +119,31 @@ function RouteComponent() {
       );
     },
   });
+  const uploadImageForm = useForm({
+    defaultValues: {
+      file: null as File | null,
+    },
+    validators: {
+      onSubmit: z.object({
+        file: z
+          .instanceof(File, { error: 'Please upload a valid file' })
+          .refine((file) => file.size < 5 * 1024 * 1024, 'File size too large'),
+      }),
+    },
+    onSubmit: async (values) => {
+      const formData = new FormData();
+      formData.append('file', values.value.file!);
+
+      let result;
+      try {
+        result = await uploadImageFn({ data: formData });
+      } catch (error: any) {
+        toast.error(`Image upload failed: ${error.message}`);
+        return;
+      }
+      console.log('Upload result:', result);
+    },
+  });
 
   const handleUserDeletion = async () => {
     await authClient.deleteUser({});
@@ -134,6 +161,46 @@ function RouteComponent() {
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
         <ScrollArea className="h-full w-full overflow-auto pr-2">
+          <h1 className="text-xl font-bold">Profile Picture</h1>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              uploadImageForm.handleSubmit();
+            }}
+            className="flex flex-col gap-1 mt-4"
+          >
+            <uploadImageForm.Field name="file">
+              {(field) => (
+                <FormField
+                  field={field}
+                  label="Upload Profile Picture"
+                  type="file"
+                  currentImage={session.data?.user.image ?? undefined}
+                />
+              )}
+            </uploadImageForm.Field>
+            <uploadImageForm.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting]}
+            >
+              {([canSubmit, isSubmitting]) => (
+                <Button
+                  type="submit"
+                  disabled={!canSubmit}
+                  size={'lg'}
+                  className="mt-2 font-bold self-end"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Spinner /> Uploading...
+                    </>
+                  ) : (
+                    'Upload Picture'
+                  )}
+                </Button>
+              )}
+            </uploadImageForm.Subscribe>
+          </form>
           <h1 className="text-xl font-bold">Reset password</h1>
           <form
             onSubmit={(e) => {
