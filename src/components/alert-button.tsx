@@ -9,29 +9,24 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from './ui/alert-dialog';
-import { Button } from './ui/button';
 
 export function AlertButton({
   onClick,
+  title,
   description,
   children,
-  className,
 }: {
   onClick: () => void;
+  title: string;
   description: string;
   children?: React.ReactNode;
-  className?: string;
 }) {
   return (
     <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="destructive" className={className}>
-          {children}
-        </Button>
-      </AlertDialogTrigger>
+      <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

@@ -3,6 +3,7 @@ import { ChangeEmailForm } from '@/components/settings/change-email-form';
 import { ChangeNameForm } from '@/components/settings/change-name-form';
 import { ChangePasswordForm } from '@/components/settings/change-password-form';
 import { ChangeProfilePictureForm } from '@/components/settings/change-profile-picture-form';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -60,10 +61,12 @@ function RouteComponent() {
 
             <AlertButton
               onClick={handleUserDeletion}
-              className="self-end"
+              title="Are you sure you want to delete your account?"
               description="This action cannot be undone. This will permanently delete your account and remove your data from our servers."
             >
-              Delete account
+              <Button variant="destructive" className="self-end">
+                Delete account
+              </Button>
             </AlertButton>
           </div>
           <br />

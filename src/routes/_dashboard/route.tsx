@@ -1,3 +1,4 @@
+import { AlertButton } from '@/components/alert-button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { signOut, useSession } from '@/lib/auth-client';
 import {
@@ -79,11 +80,16 @@ function RouteComponent() {
             </AvatarFallback>
           </Avatar>
 
-          <LogOut
-            className="text-muted-foreground hover:text-destructive transition-colors hover:bg-muted-foreground/20 p-3 cursor-pointer rounded-lg box-content"
-            size={24}
+          <AlertButton
             onClick={handleSignOut}
-          />
+            title="Ready to sign out?"
+            description="You’ll be logged out of your account, but you can sign back in anytime."
+          >
+            <LogOut
+              size={24}
+              className="text-muted-foreground hover:text-destructive transition-colors hover:bg-muted-foreground/20 p-3 cursor-pointer rounded-lg box-content"
+            />
+          </AlertButton>
         </div>
       </aside>
 
