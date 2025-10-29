@@ -33,46 +33,49 @@ export function ChangeEmailForm() {
     },
   });
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        changeEmailForm.handleSubmit();
-      }}
-      className="flex flex-col gap-1 mt-4"
-    >
-      <changeEmailForm.Field name="email">
-        {(field) => (
-          <FormField
-            field={field}
-            label="Email"
-            type="email"
-            placeholder="Enter your new email..."
-            autoComplete="email"
-          />
-        )}
-      </changeEmailForm.Field>
-
-      <changeEmailForm.Subscribe
-        selector={(state) => [state.canSubmit, state.isSubmitting]}
+    <div>
+      <h1 className="text-lg font-bold">Email</h1>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          changeEmailForm.handleSubmit();
+        }}
+        className="flex flex-col gap-1 mt-4"
       >
-        {([canSubmit, isSubmitting]) => (
-          <Button
-            type="submit"
-            disabled={!canSubmit}
-            size={'lg'}
-            className="mt-2 font-bold self-end"
-          >
-            {isSubmitting ? (
-              <>
-                <Spinner /> Updating email...
-              </>
-            ) : (
-              'Update email'
-            )}
-          </Button>
-        )}
-      </changeEmailForm.Subscribe>
-    </form>
+        <changeEmailForm.Field name="email">
+          {(field) => (
+            <FormField
+              field={field}
+              label="Email"
+              type="email"
+              placeholder="Enter your new email..."
+              autoComplete="email"
+              renderLabel={false}
+            />
+          )}
+        </changeEmailForm.Field>
+
+        <changeEmailForm.Subscribe
+          selector={(state) => [state.canSubmit, state.isSubmitting]}
+        >
+          {([canSubmit, isSubmitting]) => (
+            <Button
+              type="submit"
+              disabled={!canSubmit}
+              className="mt-2 font-bold self-end"
+            >
+              {isSubmitting ? (
+                <>
+                  <Spinner /> Updating email...
+                </>
+              ) : (
+                'Update email'
+              )}
+            </Button>
+          )}
+        </changeEmailForm.Subscribe>
+      </form>
+    </div>
   );
 }

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
 interface FormFieldProps {
   field: any;
@@ -9,8 +10,9 @@ interface FormFieldProps {
   type?: string;
   placeholder?: string;
   autoComplete?: string;
-  currentImage?: string; // optional: pass user's current image
-  fallback?: string; // optional: first letter fallback
+  currentImage?: string;
+  labelFont?: string;
+  renderLabel?: boolean;
 }
 
 export function FormField({
@@ -20,6 +22,8 @@ export function FormField({
   placeholder,
   autoComplete,
   currentImage,
+  labelFont = 'font-bold',
+  renderLabel = true,
 }: FormFieldProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -35,9 +39,11 @@ export function FormField({
 
   return (
     <div className="space-y-1">
-      <Label htmlFor={field.name} className="font-bold text-md">
-        {label}
-      </Label>
+      {renderLabel && (
+        <Label htmlFor={field.name} className={cn(labelFont, 'text-md')}>
+          {label}
+        </Label>
+      )}
 
       {type === 'file' ? (
         <div className="flex items-center gap-4">
@@ -53,7 +59,7 @@ export function FormField({
             }}
             className="cursor-pointer"
           />
-          <Avatar className="w-16 h-16">
+          <Avatar className="w-10 h-10">
             <AvatarImage src={previewUrl ?? currentImage} />
           </Avatar>
         </div>

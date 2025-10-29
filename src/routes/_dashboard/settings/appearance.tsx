@@ -16,17 +16,21 @@ function RouteComponent() {
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle className="text-2xl">Appearance Settings</CardTitle>
+        <CardTitle className="text-2xl font-bold">
+          Appearance Settings
+        </CardTitle>
         <CardDescription>
           Customize the look and feel of your application.
         </CardDescription>
-        <CardContent>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col pr-2 pl-1">
           <div className="flex items-center justify-between">
-            <span>Change theme</span>
+            <h1 className="text-lg font-bold">Theme Mode</h1>
             <ModeToggle />
           </div>
-        </CardContent>
-      </CardHeader>
+        </div>
+      </CardContent>
     </Card>
   );
 }

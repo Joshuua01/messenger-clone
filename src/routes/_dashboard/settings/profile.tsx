@@ -34,38 +34,45 @@ function RouteComponent() {
   const navigation = useNavigate();
 
   const handleUserDeletion = async () => {
-    await authClient.deleteUser({});
-    toast.success('Account deleted successfully!');
-    navigation({ to: '/' });
+    await authClient.deleteUser(
+      {},
+      {
+        onSuccess: () => {
+          toast.success('Account deleted successfully!');
+          navigation({ to: '/' });
+        },
+        onError: (ctx) => {
+          toast.error(ctx.error.message);
+        },
+      },
+    );
   };
 
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle className="text-2xl">Profile Settings</CardTitle>
+        <CardTitle className="text-2xl font-bold">Profile Settings</CardTitle>
         <CardDescription>
           Update your personal information and account details.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full w-full overflow-auto pr-2">
-          <h1 className="text-xl font-bold">Profile Picture</h1>
+        <ScrollArea className="h-full w-full overflow-auto pr-2 pl-1">
           <ChangeProfilePictureForm />
 
-          <h1 className="text-xl font-bold">Reset password</h1>
           <ChangePasswordForm />
 
-          <h1 className="text-xl font-bold">Change your name</h1>
           <ChangeNameForm />
 
-          <h1 className="text-xl font-bold">Change your email</h1>
           <ChangeEmailForm />
 
-          <div className="flex items-center justify-between mt-6">
-            <h1 className="text-xl font-bold">Delete account</h1>
+          <div className="flex flex-col items-center mt-6">
+            <h1 className="text-lg font-bold self-start">Delete account</h1>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive">Delete account</Button>
+                <Button variant="destructive" className="self-end">
+                  Delete account
+                </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>

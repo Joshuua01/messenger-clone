@@ -53,44 +53,48 @@ export function ChangeProfilePictureForm() {
   });
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        uploadImageForm.handleSubmit();
-      }}
-      className="flex flex-col gap-1 mt-4"
-    >
-      <uploadImageForm.Field name="file">
-        {(field) => (
-          <FormField
-            field={field}
-            label="Upload Profile Picture"
-            type="file"
-            currentImage={session.data?.user.image ?? undefined}
-          />
-        )}
-      </uploadImageForm.Field>
-      <uploadImageForm.Subscribe
-        selector={(state) => [state.canSubmit, state.isSubmitting]}
+    <div>
+      <h1 className="text-lg font-bold">Profile Picture</h1>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          uploadImageForm.handleSubmit();
+        }}
+        className="flex flex-col gap-1 mt-4"
       >
-        {([canSubmit, isSubmitting]) => (
-          <Button
-            type="submit"
-            disabled={!canSubmit}
-            size={'lg'}
-            className="mt-2 font-bold self-end"
-          >
-            {isSubmitting ? (
-              <>
-                <Spinner /> Uploading...
-              </>
-            ) : (
-              'Upload Picture'
-            )}
-          </Button>
-        )}
-      </uploadImageForm.Subscribe>
-    </form>
+        <uploadImageForm.Field name="file">
+          {(field) => (
+            <FormField
+              field={field}
+              label="Upload profile picture"
+              type="file"
+              labelFont="font-semibold"
+              currentImage={session.data?.user.image ?? undefined}
+            />
+          )}
+        </uploadImageForm.Field>
+        <uploadImageForm.Subscribe
+          selector={(state) => [state.canSubmit, state.isSubmitting]}
+        >
+          {([canSubmit, isSubmitting]) => (
+            <Button
+              type="submit"
+              disabled={!canSubmit}
+              size={'lg'}
+              className="mt-2 font-bold self-end"
+            >
+              {isSubmitting ? (
+                <>
+                  <Spinner /> Uploading...
+                </>
+              ) : (
+                'Upload Picture'
+              )}
+            </Button>
+          )}
+        </uploadImageForm.Subscribe>
+      </form>
+    </div>
   );
 }
