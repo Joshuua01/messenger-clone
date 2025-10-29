@@ -1,4 +1,13 @@
-import { pgTable, text, timestamp, boolean } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  text,
+  timestamp,
+  boolean,
+  uuid,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
+
+// Auth tables
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -59,3 +68,30 @@ export const verification = pgTable('verification', {
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
 });
+
+// Application tables
+
+export const conversation = pgTable('conversation', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  lastMessage: text('last_message'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at')
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+export const participant = pgTable(
+  'participant',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    conversationId: uuid('conversation_id')
+      .notNull()
+      .references(() => conversation.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    joinedAt: timestamp('joined_at').defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex('uq_conversation_user').on(t.conversationId, t.userId)],
+);
