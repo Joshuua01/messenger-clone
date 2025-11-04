@@ -1,3 +1,4 @@
+import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import {
   pgTable,
   text,
@@ -95,3 +96,6 @@ export const participant = pgTable(
   },
   (t) => [uniqueIndex('uq_conversation_user').on(t.conversationId, t.userId)],
 );
+
+export type UserSelect = InferSelectModel<typeof user>;
+export type UserInsert = InferInsertModel<typeof user>;

@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { authClient } from '@/lib/auth-client';
 import { LoginForm, loginSchema } from '@/lib/validation-schema';
+import { useForm } from '@tanstack/react-form';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useForm } from 'node_modules/@tanstack/react-form/dist/esm/useForm';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/_auth/login')({
