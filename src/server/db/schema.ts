@@ -6,7 +6,13 @@ import {
   boolean,
   uuid,
   uniqueIndex,
+  pgEnum,
 } from 'drizzle-orm/pg-core';
+
+export const conversationTypeEnum = pgEnum('conversation_type', [
+  'private',
+  'group',
+]);
 
 // Auth tables
 
@@ -74,6 +80,7 @@ export const verification = pgTable('verification', {
 
 export const conversation = pgTable('conversation', {
   id: uuid('id').primaryKey().defaultRandom(),
+  type: conversationTypeEnum('type').default('private').notNull(),
   lastMessage: text('last_message'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at')
@@ -81,6 +88,21 @@ export const conversation = pgTable('conversation', {
     .$onUpdate(() => new Date())
     .notNull(),
 });
+
+export const privateConversation = pgTable(
+  'private_conversation',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    conversationId: uuid('conversation_id')
+      .notNull()
+      .references(() => conversation.id, { onDelete: 'cascade' }),
+    userAId: text('user_a_id').notNull(),
+    userBId: text('user_b_id').notNull(),
+  },
+  (t) => [
+    uniqueIndex('uq_private_conversation_users').on(t.userAId, t.userBId),
+  ],
+);
 
 export const participant = pgTable(
   'participant',
@@ -99,3 +121,16 @@ export const participant = pgTable(
 
 export type UserSelect = InferSelectModel<typeof user>;
 export type UserInsert = InferInsertModel<typeof user>;
+
+export type ConversationSelect = InferSelectModel<typeof conversation>;
+export type ConversationInsert = InferInsertModel<typeof conversation>;
+
+export type PrivateConversationSelect = InferSelectModel<
+  typeof privateConversation
+>;
+export type PrivateConversationInsert = InferInsertModel<
+  typeof privateConversation
+>;
+
+export type ParticipantSelect = InferSelectModel<typeof participant>;
+export type ParticipantInsert = InferInsertModel<typeof participant>;
