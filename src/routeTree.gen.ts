@@ -18,6 +18,7 @@ import { Route as DashboardChatRouteRouteImport } from './routes/_dashboard/chat
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as DashboardSettingsProfileRouteImport } from './routes/_dashboard/settings/profile'
 import { Route as DashboardSettingsAppearanceRouteImport } from './routes/_dashboard/settings/appearance'
+import { Route as DashboardChatChatIdRouteImport } from './routes/_dashboard/chat/$chatId'
 
 const DashboardRouteRoute = DashboardRouteRouteImport.update({
   id: '/_dashboard',
@@ -65,23 +66,30 @@ const DashboardSettingsAppearanceRoute =
     path: '/appearance',
     getParentRoute: () => DashboardSettingsRouteRoute,
   } as any)
+const DashboardChatChatIdRoute = DashboardChatChatIdRouteImport.update({
+  id: '/$chatId',
+  path: '/$chatId',
+  getParentRoute: () => DashboardChatRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/chat': typeof DashboardChatRouteRoute
+  '/chat': typeof DashboardChatRouteRouteWithChildren
   '/settings': typeof DashboardSettingsRouteRouteWithChildren
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
+  '/chat/$chatId': typeof DashboardChatChatIdRoute
   '/settings/appearance': typeof DashboardSettingsAppearanceRoute
   '/settings/profile': typeof DashboardSettingsProfileRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/chat': typeof DashboardChatRouteRoute
+  '/chat': typeof DashboardChatRouteRouteWithChildren
   '/settings': typeof DashboardSettingsRouteRouteWithChildren
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
+  '/chat/$chatId': typeof DashboardChatChatIdRoute
   '/settings/appearance': typeof DashboardSettingsAppearanceRoute
   '/settings/profile': typeof DashboardSettingsProfileRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -90,10 +98,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_dashboard': typeof DashboardRouteRouteWithChildren
-  '/_dashboard/chat': typeof DashboardChatRouteRoute
+  '/_dashboard/chat': typeof DashboardChatRouteRouteWithChildren
   '/_dashboard/settings': typeof DashboardSettingsRouteRouteWithChildren
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/register': typeof AuthRegisterRoute
+  '/_dashboard/chat/$chatId': typeof DashboardChatChatIdRoute
   '/_dashboard/settings/appearance': typeof DashboardSettingsAppearanceRoute
   '/_dashboard/settings/profile': typeof DashboardSettingsProfileRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/login'
     | '/register'
+    | '/chat/$chatId'
     | '/settings/appearance'
     | '/settings/profile'
     | '/api/auth/$'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/login'
     | '/register'
+    | '/chat/$chatId'
     | '/settings/appearance'
     | '/settings/profile'
     | '/api/auth/$'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/_dashboard/settings'
     | '/_auth/login'
     | '/_auth/register'
+    | '/_dashboard/chat/$chatId'
     | '/_dashboard/settings/appearance'
     | '/_dashboard/settings/profile'
     | '/api/auth/$'
@@ -205,8 +217,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardSettingsAppearanceRouteImport
       parentRoute: typeof DashboardSettingsRouteRoute
     }
+    '/_dashboard/chat/$chatId': {
+      id: '/_dashboard/chat/$chatId'
+      path: '/$chatId'
+      fullPath: '/chat/$chatId'
+      preLoaderRoute: typeof DashboardChatChatIdRouteImport
+      parentRoute: typeof DashboardChatRouteRoute
+    }
   }
 }
+
+interface DashboardChatRouteRouteChildren {
+  DashboardChatChatIdRoute: typeof DashboardChatChatIdRoute
+}
+
+const DashboardChatRouteRouteChildren: DashboardChatRouteRouteChildren = {
+  DashboardChatChatIdRoute: DashboardChatChatIdRoute,
+}
+
+const DashboardChatRouteRouteWithChildren =
+  DashboardChatRouteRoute._addFileChildren(DashboardChatRouteRouteChildren)
 
 interface DashboardSettingsRouteRouteChildren {
   DashboardSettingsAppearanceRoute: typeof DashboardSettingsAppearanceRoute
@@ -225,12 +255,12 @@ const DashboardSettingsRouteRouteWithChildren =
   )
 
 interface DashboardRouteRouteChildren {
-  DashboardChatRouteRoute: typeof DashboardChatRouteRoute
+  DashboardChatRouteRoute: typeof DashboardChatRouteRouteWithChildren
   DashboardSettingsRouteRoute: typeof DashboardSettingsRouteRouteWithChildren
 }
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
-  DashboardChatRouteRoute: DashboardChatRouteRoute,
+  DashboardChatRouteRoute: DashboardChatRouteRouteWithChildren,
   DashboardSettingsRouteRoute: DashboardSettingsRouteRouteWithChildren,
 }
 
