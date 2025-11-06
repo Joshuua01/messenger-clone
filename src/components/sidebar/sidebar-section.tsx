@@ -23,8 +23,8 @@ export function SidebarSection({
   const location = useLocation();
   const isChat = location.pathname.includes('chat');
   return (
-    <Card className="h-full">
-      <CardHeader>
+    <Card className="h-full overflow-hidden flex flex-col">
+      <CardHeader className="shrink-0">
         <CardTitle className="text-2xl">{title}</CardTitle>
         <CardDescription className="text-xs">{description}</CardDescription>
         {isChat && (
@@ -33,7 +33,9 @@ export function SidebarSection({
           </CardAction>
         )}
       </CardHeader>
-      <CardContent>{children}</CardContent>
+      <CardContent className="flex-1 overflow-hidden min-h-0">
+        {children}
+      </CardContent>
     </Card>
   );
 }

@@ -50,7 +50,6 @@ export const getUserConversationsFn = createServerFn()
         conversationId: conversation.id,
         lastMessage: conversation.lastMessage,
         updatedAt: conversation.updatedAt,
-        otherUserId: user.id,
         otherUserName: user.name,
         otherUserImage: user.image,
       })
