@@ -9,6 +9,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { and, asc, desc, eq, or } from 'drizzle-orm';
 import z from 'zod';
 import { MessageWithSender } from '../types';
+import { withAuth } from '../middleware/auth-middleware';
 
 const conversationFnSchema = z.object({
   participantIds: z.array(z.string()).length(2),
@@ -16,6 +17,7 @@ const conversationFnSchema = z.object({
 
 export const createPrivateConversationFn = createServerFn()
   .inputValidator(conversationFnSchema)
+  .middleware([withAuth])
   .handler(async ({ data }) => {
     const { participantIds } = data;
     const [userA, userB] = participantIds.sort();
@@ -48,6 +50,7 @@ export const createPrivateConversationFn = createServerFn()
 
 export const getUserConversationsFn = createServerFn()
   .inputValidator(z.string())
+  .middleware([withAuth])
   .handler(async ({ data }) => {
     const userId = data;
 
@@ -90,6 +93,7 @@ export const getUserConversationsFn = createServerFn()
 
 export const getMessagesForConversationFn = createServerFn()
   .inputValidator(z.string())
+  .middleware([withAuth])
   .handler(async ({ data }): Promise<MessageWithSender[]> => {
     const conversationId = data;
 
@@ -112,6 +116,7 @@ export const getMessagesForConversationFn = createServerFn()
   });
 
 export const sendMessageFn = createServerFn()
+  .middleware([withAuth])
   .inputValidator(
     z.object({
       conversationId: z.string(),
