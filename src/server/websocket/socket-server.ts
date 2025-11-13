@@ -1,3 +1,4 @@
+import { MessageWithSender } from '@/lib/types';
 import { Server } from 'socket.io';
 
 const io = new Server({
@@ -5,29 +6,16 @@ const io = new Server({
 });
 
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
-
-  socket.on('join_chat', (chatId: string) => {
-    socket.join(`chat:${chatId}`);
-    console.log(`Socket ${socket.id} joined chat ${chatId}`);
+  socket.on('join_chat', (conversationId: string) => {
+    socket.join(`chat:${conversationId}`);
   });
 
-  socket.on('leave_chat', (chatId: string) => {
-    socket.leave(`chat:${chatId}`);
-    console.log(`Socket ${socket.id} left chat ${chatId}`);
+  socket.on('leave_chat', (conversationId: string) => {
+    socket.leave(`chat:${conversationId}`);
   });
 
-  socket.on(
-    'send_message',
-    (data: { chatId: string; username: string; message: string }) => {
-      const { chatId, username, message } = data;
-      io.to(`chat:${chatId}`).emit('message', { username, message });
-      console.log(`Message sent to chat ${chatId} by ${username}: ${message}`);
-    },
-  );
-
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+  socket.on('send_message', (message: MessageWithSender) => {
+    io.to(`chat:${message.conversationId}`).emit('new_message', message);
   });
 });
 

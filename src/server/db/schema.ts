@@ -104,20 +104,17 @@ export const privateConversation = pgTable(
   ],
 );
 
-export const participant = pgTable(
-  'participant',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-    conversationId: uuid('conversation_id')
-      .notNull()
-      .references(() => conversation.id, { onDelete: 'cascade' }),
-    userId: text('user_id')
-      .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }),
-    joinedAt: timestamp('joined_at').defaultNow().notNull(),
-  },
-  (t) => [uniqueIndex('uq_conversation_user').on(t.conversationId, t.userId)],
-);
+export const message = pgTable('message', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  conversationId: uuid('conversation_id')
+    .notNull()
+    .references(() => conversation.id, { onDelete: 'cascade' }),
+  senderId: text('sender_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
 
 export type UserSelect = InferSelectModel<typeof user>;
 export type UserInsert = InferInsertModel<typeof user>;
@@ -131,6 +128,3 @@ export type PrivateConversationSelect = InferSelectModel<
 export type PrivateConversationInsert = InferInsertModel<
   typeof privateConversation
 >;
-
-export type ParticipantSelect = InferSelectModel<typeof participant>;
-export type ParticipantInsert = InferInsertModel<typeof participant>;

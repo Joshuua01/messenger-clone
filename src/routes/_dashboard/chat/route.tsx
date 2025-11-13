@@ -31,7 +31,7 @@ function RouteComponent() {
   const location = useLocation().pathname.slice(6);
 
   return (
-    <div className="flex flex-1 h-full">
+    <div className="flex flex-1 h-full gap-2">
       <div className="w-96 shrink-0 h-full flex flex-col">
         <SidebarSection
           title="Recent Chats"
@@ -73,7 +73,7 @@ function RouteComponent() {
         </SidebarSection>
       </div>
 
-      <div className="flex-1">
+      <div className="flex-1 flex">
         <Outlet />
       </div>
     </div>
