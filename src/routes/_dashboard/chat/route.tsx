@@ -59,11 +59,11 @@ function RouteComponent() {
                     {conversation.otherUserName?.[0] ?? 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <div>
+                <div className="flex-1 min-w-0">
                   <h3 className="font-semibold">
                     {conversation.otherUserName}
                   </h3>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 truncate max-w-[220px]">
                     {conversation.lastMessage ?? 'No messages yet.'}
                   </p>
                 </div>

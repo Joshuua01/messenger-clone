@@ -85,14 +85,23 @@ function RouteComponent() {
         </header>
 
         <ScrollArea className="flex-1 min-h-0 px-6 py-1">
-          <div className="flex flex-col gap-1">
-            {messages.map((message) => (
-              <MessageBubble
-                key={message.messageId}
-                content={message.content}
-                isOwn={message.senderId === currentUserId}
-              />
-            ))}
+          <div className="flex flex-col gap-3">
+            {messages.length ? (
+              messages.map((message) => (
+                <MessageBubble
+                  key={message.messageId}
+                  content={message.content}
+                  isOwn={message.senderId === currentUserId}
+                  senderName={message.senderName}
+                  senderImage={message.senderImage}
+                  timestamp={message.createdAt}
+                />
+              ))
+            ) : (
+              <div className="flex justify-center items-center h-full mt-10 text-muted-foreground font-semibold">
+                No messages yet. Start the conversation!
+              </div>
+            )}
             <div ref={scrollRef} />
           </div>
         </ScrollArea>
