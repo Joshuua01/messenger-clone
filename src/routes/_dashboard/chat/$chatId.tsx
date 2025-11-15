@@ -1,4 +1,5 @@
 import { MessageBubble } from '@/components/chat/message-bubble';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -8,6 +9,7 @@ import { getSessionFn } from '@/lib/fn/auth-fn';
 import {
   getMessagesForConversationFn,
   sendMessageFn,
+  getOtherUserConversationInfoFn,
 } from '@/lib/fn/conversation-fn';
 import { socket } from '@/lib/socket';
 import { useForm } from '@tanstack/react-form';
@@ -19,23 +21,28 @@ export const Route = createFileRoute('/_dashboard/chat/$chatId')({
   component: RouteComponent,
   loader: async ({ params }) => {
     const { chatId } = params;
-    const [chatMessages, currentSession] = await Promise.all([
+    const [chatMessages, currentSession, conversationInfo] = await Promise.all([
       getMessagesForConversationFn({ data: chatId }),
       getSessionFn(),
+      getOtherUserConversationInfoFn({ data: chatId }),
     ]);
     return {
       chatMessages,
       currentUserId: currentSession.session.data?.user.id,
+      conversationInfo,
     };
   },
 });
 
 function RouteComponent() {
   const { chatId: conversationId } = Route.useParams();
-  const { chatMessages, currentUserId } = Route.useLoaderData();
+  const { chatMessages, currentUserId, conversationInfo } =
+    Route.useLoaderData();
   const [messages, setMessages] = useState(chatMessages);
   const scrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  console.log('Conversation Info:', conversationInfo);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -80,8 +87,16 @@ function RouteComponent() {
   return (
     <div className="flex-1 h-full overflow-hidden">
       <div className="bg-card text-card-foreground flex flex-col rounded-xl border shadow-sm h-full overflow-hidden">
-        <header className="p-6 border-b">
-          <h1 className="text-xl font-semibold">Chat</h1>
+        <header className="p-6 border-b flex items-center gap-4">
+          <Avatar>
+            <AvatarImage src={conversationInfo?.otherUserImage ?? undefined} />
+            <AvatarFallback>
+              {conversationInfo?.otherUserName?.[0] ?? 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <h1 className="text-xl font-semibold">
+            {conversationInfo?.otherUserName || 'Unknown User'}
+          </h1>
         </header>
 
         <ScrollArea className="flex-1 min-h-0 px-6 py-1">

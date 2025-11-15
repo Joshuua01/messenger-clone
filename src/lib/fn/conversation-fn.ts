@@ -6,7 +6,7 @@ import {
   user,
 } from '@/server/db/schema';
 import { createServerFn } from '@tanstack/react-start';
-import { and, asc, desc, eq, or } from 'drizzle-orm';
+import { and, asc, desc, eq, isNotNull, or } from 'drizzle-orm';
 import z from 'zod';
 import { MessageWithSender } from '../types';
 import { withAuth } from '../middleware/auth-middleware';
@@ -80,14 +80,53 @@ export const getCurrentUserConversationsFn = createServerFn()
         ),
       )
       .where(
-        or(
-          eq(privateConversation.userAId, userId),
-          eq(privateConversation.userBId, userId),
+        and(
+          or(
+            eq(privateConversation.userAId, userId),
+            eq(privateConversation.userBId, userId),
+          ),
+          isNotNull(conversation.lastMessage),
         ),
       )
       .orderBy(desc(conversation.updatedAt));
 
     return conversations;
+  });
+
+export const getOtherUserConversationInfoFn = createServerFn()
+  .inputValidator(z.string())
+  .middleware([withAuth])
+  .handler(async ({ data, context }) => {
+    const conversationId = data;
+    const { id: currentUserId } = context.user;
+
+    const conversationInfo = await db
+      .select({
+        otherUserName: user.name,
+        otherUserImage: user.image,
+      })
+      .from(conversation)
+      .innerJoin(
+        privateConversation,
+        eq(conversation.id, privateConversation.conversationId),
+      )
+      .innerJoin(
+        user,
+        or(
+          and(
+            eq(privateConversation.userAId, user.id),
+            eq(privateConversation.userBId, currentUserId),
+          ),
+          and(
+            eq(privateConversation.userBId, user.id),
+            eq(privateConversation.userAId, currentUserId),
+          ),
+        ),
+      )
+      .where(eq(conversation.id, conversationId))
+      .limit(1);
+
+    return conversationInfo[0];
   });
 
 export const getMessagesForConversationFn = createServerFn()
