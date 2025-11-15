@@ -48,11 +48,10 @@ export const createPrivateConversationFn = createServerFn()
     return newConversation.id;
   });
 
-export const getUserConversationsFn = createServerFn()
-  .inputValidator(z.string())
+export const getCurrentUserConversationsFn = createServerFn()
   .middleware([withAuth])
-  .handler(async ({ data }) => {
-    const userId = data;
+  .handler(async ({ context }) => {
+    const { id: userId } = context.user;
 
     const conversations = await db
       .select({
@@ -97,7 +96,7 @@ export const getMessagesForConversationFn = createServerFn()
   .handler(async ({ data }): Promise<MessageWithSender[]> => {
     const conversationId = data;
 
-    const conversationWithMessages = await db
+    const messages = await db
       .select({
         messageId: message.id,
         conversationId: message.conversationId,
@@ -112,7 +111,7 @@ export const getMessagesForConversationFn = createServerFn()
       .where(eq(message.conversationId, conversationId))
       .orderBy(asc(message.createdAt));
 
-    return conversationWithMessages;
+    return messages;
   });
 
 export const sendMessageFn = createServerFn()

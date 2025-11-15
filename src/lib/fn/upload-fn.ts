@@ -7,9 +7,10 @@ import { withAuth } from '../middleware/auth-middleware';
 export const uploadImageFn = createServerFn({ method: 'POST' })
   .middleware([withAuth])
   .inputValidator(z.instanceof(FormData))
-  .handler(async ({ data: formData }) => {
+  .handler(async ({ data: formData, context }) => {
     const file = formData.get('file') as File;
-    const currentImage = formData.get('currentImage') as string | null;
+    const currentImage = context.user.image;
+
     if (!file) {
       throw new Error('No file provided');
     }

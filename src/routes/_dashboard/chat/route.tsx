@@ -1,8 +1,7 @@
 import { SidebarSection } from '@/components/sidebar/sidebar-section';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getSessionFn } from '@/lib/fn/auth-fn';
-import { getUserConversationsFn } from '@/lib/fn/conversation-fn';
+import { getCurrentUserConversationsFn } from '@/lib/fn/conversation-fn';
 import { cn } from '@/lib/utils';
 import {
   createFileRoute,
@@ -15,16 +14,17 @@ import {
 export const Route = createFileRoute('/_dashboard/chat')({
   component: RouteComponent,
   loader: async () => {
-    const session = await getSessionFn();
-    if (!session.session.data?.user.id) {
-      throw redirect({ to: '/login' });
+    try {
+      return await getCurrentUserConversationsFn();
+    } catch (err) {
+      if (err instanceof Response && err.status === 401) {
+        throw redirect({ to: '/login' });
+      }
+      throw err;
     }
-    const userChats = await getUserConversationsFn({
-      data: session.session.data.user.id,
-    });
-    return userChats;
   },
 });
+
 function RouteComponent() {
   const conversations = Route.useLoaderData();
   const navigate = useNavigate();

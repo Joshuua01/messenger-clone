@@ -6,9 +6,13 @@ export const withAuth = createMiddleware({ type: 'function' }).server(
     const { session } = await getSessionFn();
 
     if (!session?.data?.user) {
-      throw new Error('Unauthorized');
+      throw new Response('Unauthorized', { status: 401 });
     }
 
-    return next();
+    return next({
+      context: {
+        user: session.data.user,
+      },
+    });
   },
 );

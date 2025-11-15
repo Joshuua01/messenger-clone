@@ -24,9 +24,6 @@ export function ChangeProfilePictureForm() {
     onSubmit: async (values) => {
       const formData = new FormData();
       formData.append('file', values.value.file!);
-      if (session.data?.user.image) {
-        formData.append('currentImage', session.data.user.image);
-      }
 
       let result;
       try {
