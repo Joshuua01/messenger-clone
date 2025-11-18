@@ -12,8 +12,11 @@ import {
   getOtherUserConversationInfoFn,
 } from '@/lib/fn/conversation-fn';
 import { socket } from '@/lib/socket';
+import { MessageWithSender } from '@/lib/types';
+import { formatDate } from '@/lib/utils';
 import { useForm } from '@tanstack/react-form';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
+import React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -55,6 +58,27 @@ function RouteComponent() {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
+  useEffect(() => {
+    setMessages(chatMessages);
+    setShouldScrollToBottom(true);
+  }, [conversationId]);
+
+  useEffect(() => {
+    if (shouldScrollToBottom) {
+      scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+      setShouldScrollToBottom(false);
+    }
+  }, [messages, shouldScrollToBottom]);
+
+  useChatSocket(conversationId, (message) => {
+    setMessages((prevMessages) => [...prevMessages, message]);
+    setShouldScrollToBottom(true);
+
+    router.invalidate({
+      filter: (route) => route.routeId === '/_dashboard/chat',
+    });
+  });
+
   const messageForm = useForm({
     defaultValues: {
       message: '',
@@ -81,27 +105,6 @@ function RouteComponent() {
     },
   });
 
-  useChatSocket(conversationId, (message) => {
-    setMessages((prevMessages) => [...prevMessages, message]);
-    setShouldScrollToBottom(true);
-
-    router.invalidate({
-      filter: (route) => route.routeId === '/_dashboard/chat',
-    });
-  });
-
-  useEffect(() => {
-    setMessages(chatMessages);
-    setShouldScrollToBottom(true);
-  }, [conversationId]);
-
-  useEffect(() => {
-    if (shouldScrollToBottom) {
-      scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-      setShouldScrollToBottom(false);
-    }
-  }, [messages, shouldScrollToBottom]);
-
   const loadMoreMessages = async () => {
     if (!hasMore || isLoadingMore || !cursor) return;
 
@@ -124,9 +127,21 @@ function RouteComponent() {
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget as HTMLDivElement;
 
-    if (target.scrollTop < 5 && hasMore && !isLoadingMore) {
+    if (target.scrollTop < 50 && hasMore && !isLoadingMore) {
       loadMoreMessages();
     }
+  };
+
+  const shouldShowDateSeparator = (
+    currentMessage: MessageWithSender,
+    previousMessage: MessageWithSender | null,
+  ) => {
+    if (!previousMessage) return true;
+
+    const currentDate = new Date(currentMessage.createdAt).toDateString();
+    const previousDate = new Date(previousMessage.createdAt).toDateString();
+
+    return currentDate !== previousDate;
   };
 
   return (
@@ -155,15 +170,23 @@ function RouteComponent() {
               </div>
             )}
             {messages.length ? (
-              messages.map((message) => (
-                <MessageBubble
-                  key={message.messageId}
-                  content={message.content}
-                  isOwn={message.senderId === currentUserId}
-                  senderName={message.senderName}
-                  senderImage={message.senderImage}
-                  timestamp={message.createdAt}
-                />
+              messages.map((message, index) => (
+                <React.Fragment key={message.messageId}>
+                  {shouldShowDateSeparator(message, messages[index - 1]) && (
+                    <div className="flex justify-center my-4">
+                      <span className="bg-muted text-muted-foreground text-xs font-medium px-3 py-1 rounded-full">
+                        {formatDate(message.createdAt)}
+                      </span>
+                    </div>
+                  )}
+                  <MessageBubble
+                    content={message.content}
+                    isOwn={message.senderId === currentUserId}
+                    senderName={message.senderName}
+                    senderImage={message.senderImage}
+                    timestamp={message.createdAt}
+                  />
+                </React.Fragment>
               ))
             ) : (
               <div className="flex justify-center items-center h-full mt-10 text-muted-foreground font-semibold">
