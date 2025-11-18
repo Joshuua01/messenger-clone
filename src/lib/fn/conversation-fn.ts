@@ -6,7 +6,7 @@ import {
   user,
 } from '@/server/db/schema';
 import { createServerFn } from '@tanstack/react-start';
-import { and, asc, desc, eq, isNotNull, or } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, or, lt } from 'drizzle-orm';
 import z from 'zod';
 import { MessageWithSender } from '../types';
 import { withAuth } from '../middleware/auth-middleware';
@@ -130,28 +130,60 @@ export const getOtherUserConversationInfoFn = createServerFn()
   });
 
 export const getMessagesForConversationFn = createServerFn()
-  .inputValidator(z.string())
+  .inputValidator(
+    z.object({
+      conversationId: z.string(),
+      cursor: z.string().optional(),
+      limit: z.number().default(10),
+    }),
+  )
   .middleware([withAuth])
-  .handler(async ({ data }): Promise<MessageWithSender[]> => {
-    const conversationId = data;
+  .handler(
+    async ({
+      data,
+    }): Promise<{ messages: MessageWithSender[]; nextCursor?: string }> => {
+      const { conversationId, cursor, limit } = data;
 
-    const messages = await db
-      .select({
-        messageId: message.id,
-        conversationId: message.conversationId,
-        content: message.content,
-        createdAt: message.createdAt,
-        senderId: user.id,
-        senderName: user.name,
-        senderImage: user.image,
-      })
-      .from(message)
-      .innerJoin(user, eq(message.senderId, user.id))
-      .where(eq(message.conversationId, conversationId))
-      .orderBy(asc(message.createdAt));
+      const messages = await db
+        .select({
+          messageId: message.id,
+          conversationId: message.conversationId,
+          content: message.content,
+          createdAt: message.createdAt,
+          senderId: user.id,
+          senderName: user.name,
+          senderImage: user.image,
+        })
+        .from(message)
+        .innerJoin(user, eq(message.senderId, user.id))
+        .where(
+          cursor
+            ? and(
+                eq(message.conversationId, conversationId),
+                lt(
+                  message.createdAt,
+                  db
+                    .select({ createdAt: message.createdAt })
+                    .from(message)
+                    .where(eq(message.id, cursor))
+                    .limit(1),
+                ),
+              )
+            : eq(message.conversationId, conversationId),
+        )
+        .orderBy(desc(message.createdAt))
+        .limit(limit + 1);
 
-    return messages;
-  });
+      const hasMore = messages.length > limit;
+      const paginatedMessages = hasMore ? messages.slice(0, limit) : messages;
+      paginatedMessages.reverse();
+
+      return {
+        messages: paginatedMessages,
+        nextCursor: hasMore ? paginatedMessages[0].messageId : undefined,
+      };
+    },
+  );
 
 export const sendMessageFn = createServerFn()
   .middleware([withAuth])

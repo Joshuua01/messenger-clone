@@ -21,13 +21,14 @@ export const Route = createFileRoute('/_dashboard/chat/$chatId')({
   component: RouteComponent,
   loader: async ({ params }) => {
     const { chatId } = params;
-    const [chatMessages, currentSession, conversationInfo] = await Promise.all([
-      getMessagesForConversationFn({ data: chatId }),
+    const [chatData, currentSession, conversationInfo] = await Promise.all([
+      getMessagesForConversationFn({ data: { conversationId: chatId } }),
       getSessionFn(),
       getOtherUserConversationInfoFn({ data: chatId }),
     ]);
     return {
-      chatMessages,
+      chatMessages: chatData.messages,
+      nextCursor: chatData.nextCursor,
       currentUserId: currentSession.session.data?.user.id,
       conversationInfo,
     };
@@ -36,17 +37,23 @@ export const Route = createFileRoute('/_dashboard/chat/$chatId')({
 
 function RouteComponent() {
   const { chatId: conversationId } = Route.useParams();
-  const { chatMessages, currentUserId, conversationInfo } =
-    Route.useLoaderData();
+  const {
+    chatMessages,
+    nextCursor: initialCursor,
+    currentUserId,
+    conversationInfo,
+  } = Route.useLoaderData();
   const [messages, setMessages] = useState(chatMessages);
+  const [cursor, setCursor] = useState(initialCursor);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(!!initialCursor);
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  console.log('Conversation Info:', conversationInfo);
-
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, []);
 
   const messageForm = useForm({
     defaultValues: {
@@ -67,8 +74,6 @@ function RouteComponent() {
         });
         socket.emit('send_message', savedMessage);
         messageForm.reset();
-
-        await router.invalidate();
       } catch (error) {
         toast.error('Failed to send message. Please try again.');
         return;
@@ -78,11 +83,51 @@ function RouteComponent() {
 
   useChatSocket(conversationId, (message) => {
     setMessages((prevMessages) => [...prevMessages, message]);
+    setShouldScrollToBottom(true);
+
+    router.invalidate({
+      filter: (route) => route.routeId === '/_dashboard/chat',
+    });
   });
 
   useEffect(() => {
     setMessages(chatMessages);
-  }, [chatMessages, conversationId]);
+    setShouldScrollToBottom(true);
+  }, [conversationId]);
+
+  useEffect(() => {
+    if (shouldScrollToBottom) {
+      scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+      setShouldScrollToBottom(false);
+    }
+  }, [messages, shouldScrollToBottom]);
+
+  const loadMoreMessages = async () => {
+    if (!hasMore || isLoadingMore || !cursor) return;
+
+    try {
+      setIsLoadingMore(true);
+      const { messages: olderMessages, nextCursor: newCursor } =
+        await getMessagesForConversationFn({
+          data: { conversationId, cursor },
+        });
+      setMessages((prevMessages) => [...olderMessages, ...prevMessages]);
+      setCursor(newCursor);
+      setHasMore(!!newCursor);
+    } catch (error) {
+      toast.error('Failed to load more messages. Please try again.');
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget as HTMLDivElement;
+
+    if (target.scrollTop < 5 && hasMore && !isLoadingMore) {
+      loadMoreMessages();
+    }
+  };
 
   return (
     <div className="flex-1 h-full overflow-hidden">
@@ -99,8 +144,16 @@ function RouteComponent() {
           </h1>
         </header>
 
-        <ScrollArea className="flex-1 min-h-0 px-6 py-1">
+        <ScrollArea
+          className="flex-1 min-h-0 px-6 py-1"
+          onScroll={handleScroll}
+        >
           <div className="flex flex-col gap-3">
+            {isLoadingMore && (
+              <div className="flex justify-center py-3">
+                <Spinner className="h-8 w-8" />
+              </div>
+            )}
             {messages.length ? (
               messages.map((message) => (
                 <MessageBubble
