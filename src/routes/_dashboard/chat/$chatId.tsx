@@ -18,7 +18,7 @@ import { useForm } from '@tanstack/react-form';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { ArrowDown } from 'lucide-react';
 import React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useLayoutEffect } from 'react';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/_dashboard/chat/$chatId')({
@@ -30,6 +30,7 @@ export const Route = createFileRoute('/_dashboard/chat/$chatId')({
       getSessionFn(),
       getOtherUserConversationInfoFn({ data: chatId }),
     ]);
+
     return {
       chatMessages: chatData.messages,
       nextCursor: chatData.nextCursor,
@@ -47,6 +48,7 @@ function RouteComponent() {
     currentUserId,
     conversationInfo,
   } = Route.useLoaderData();
+
   const [messages, setMessages] = useState(chatMessages);
   const [cursor, setCursor] = useState(initialCursor);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -56,18 +58,26 @@ function RouteComponent() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
+  const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollIntoView({ behavior, block: 'end' });
+    });
+  };
+
+  useLayoutEffect(() => {
+    scrollToBottom('auto');
+  }, [conversationId]);
 
   useEffect(() => {
     setMessages(chatMessages);
     setShouldScrollToBottom(true);
+    setCursor(initialCursor);
+    setHasMore(!!initialCursor);
   }, [conversationId]);
 
   useEffect(() => {
     if (shouldScrollToBottom) {
-      scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+      scrollToBottom('smooth');
       setShouldScrollToBottom(false);
     }
   }, [messages, shouldScrollToBottom]);
@@ -128,7 +138,6 @@ function RouteComponent() {
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget as HTMLDivElement;
-
     if (target.scrollTop < 50 && hasMore && !isLoadingMore) {
       loadMoreMessages();
     }
@@ -168,6 +177,7 @@ function RouteComponent() {
         </header>
 
         <ScrollArea
+          key={conversationId}
           className="flex-1 min-h-0 px-6 py-1"
           onScroll={handleScroll}
         >
