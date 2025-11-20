@@ -13,9 +13,10 @@ import {
 } from '@/lib/fn/conversation-fn';
 import { socket } from '@/lib/socket';
 import { MessageWithSender } from '@/lib/types';
-import { formatDate } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 import { useForm } from '@tanstack/react-form';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { ArrowDown } from 'lucide-react';
 import React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -51,6 +52,7 @@ function RouteComponent() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(!!initialCursor);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -130,6 +132,12 @@ function RouteComponent() {
     if (target.scrollTop < 50 && hasMore && !isLoadingMore) {
       loadMoreMessages();
     }
+
+    if (target.scrollHeight - target.scrollTop - target.clientHeight < 100) {
+      setIsAtBottom(true);
+    } else {
+      setIsAtBottom(false);
+    }
   };
 
   const shouldShowDateSeparator = (
@@ -194,6 +202,19 @@ function RouteComponent() {
               </div>
             )}
             <div ref={scrollRef} />
+            <div
+              className={cn(
+                'absolute bottom-0 left-1/2 transform -translate-x-1/2 transition-all duration-300 ease-in-out p-2 rounded-full bg-muted-foreground/30 cursor-pointer',
+                isAtBottom
+                  ? 'opacity-0 translate-y-4 pointer-events-none'
+                  : 'opacity-100 translate-y-0',
+              )}
+              onClick={() => {
+                scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              <ArrowDown className="h-6 w-6" strokeWidth={2.5} />
+            </div>
           </div>
         </ScrollArea>
 
