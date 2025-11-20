@@ -55,10 +55,10 @@ export const MessageBubble = ({
       )}
       <div
         className={cn(
-          'px-3 py-2 rounded-lg wrap-break-word',
+          'px-3 py-2 rounded-lg wrap-break-word max-w-full w-fit',
           isOwn
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted text-foreground',
+            ? 'bg-primary text-primary-foreground justify-self-end'
+            : 'bg-muted text-foreground justify-self-start',
         )}
       >
         {content}
