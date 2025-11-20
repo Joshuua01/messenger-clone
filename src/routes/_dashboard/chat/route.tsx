@@ -38,37 +38,45 @@ function RouteComponent() {
           description="View and manage your recent conversations."
         >
           <ScrollArea className="h-full">
-            {conversations.map((conversation) => (
-              <div
-                key={conversation.conversationId}
-                className={cn(
-                  'flex gap-4 px-2 py-3 items-center hover:bg-accent rounded-md cursor-pointer transition-colors',
-                  {
-                    'bg-accent': location === conversation.conversationId,
-                  },
-                )}
-                onClick={() =>
-                  navigate({
-                    to: `/chat/${conversation.conversationId}`,
-                  })
-                }
-              >
-                <Avatar className="w-12 h-12">
-                  <AvatarImage src={conversation.otherUserImage ?? undefined} />
-                  <AvatarFallback>
-                    {conversation.otherUserName?.[0] ?? 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold">
-                    {conversation.otherUserName}
-                  </h3>
-                  <p className="text-sm text-gray-500 truncate max-w-[220px]">
-                    {conversation.lastMessage ?? 'No messages yet.'}
-                  </p>
+            {conversations.length > 0 ? (
+              conversations.map((conversation) => (
+                <div
+                  key={conversation.conversationId}
+                  className={cn(
+                    'flex gap-4 px-2 py-3 items-center hover:bg-accent rounded-md cursor-pointer transition-colors',
+                    {
+                      'bg-accent': location === conversation.conversationId,
+                    },
+                  )}
+                  onClick={() =>
+                    navigate({
+                      to: `/chat/${conversation.conversationId}`,
+                    })
+                  }
+                >
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage
+                      src={conversation.otherUserImage ?? undefined}
+                    />
+                    <AvatarFallback>
+                      {conversation.otherUserName?.[0] ?? 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold">
+                      {conversation.otherUserName}
+                    </h3>
+                    <p className="text-sm text-gray-500 truncate max-w-[220px]">
+                      {conversation.lastMessage ?? 'No messages yet.'}
+                    </p>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="py-8 text-sm text-muted-foreground flex justify-center items-center">
+                No conversations found. Start a new chat!
               </div>
-            ))}
+            )}
           </ScrollArea>
         </SidebarSection>
       </div>
