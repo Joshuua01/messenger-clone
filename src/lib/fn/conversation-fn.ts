@@ -50,10 +50,17 @@ export const createPrivateConversationFn = createServerFn()
 
 export const getCurrentUserConversationsFn = createServerFn()
   .middleware([withAuth])
-  .handler(async ({ context }) => {
+  .inputValidator(
+    z.object({
+      cursor: z.string().optional(),
+      limit: z.number().default(15),
+    }),
+  )
+  .handler(async ({ context, data }) => {
     const { id: userId } = context.user;
+    const { cursor, limit } = data;
 
-    const conversations = await db
+    const chats = await db
       .select({
         conversationId: conversation.id,
         lastMessage: conversation.lastMessage,
@@ -80,17 +87,42 @@ export const getCurrentUserConversationsFn = createServerFn()
         ),
       )
       .where(
-        and(
-          or(
-            eq(privateConversation.userAId, userId),
-            eq(privateConversation.userBId, userId),
-          ),
-          isNotNull(conversation.lastMessage),
-        ),
+        cursor
+          ? and(
+              or(
+                eq(privateConversation.userAId, userId),
+                eq(privateConversation.userBId, userId),
+              ),
+              isNotNull(conversation.lastMessage),
+              lt(
+                conversation.updatedAt,
+                db
+                  .select({ updatedAt: conversation.updatedAt })
+                  .from(conversation)
+                  .where(eq(conversation.id, cursor))
+                  .limit(1),
+              ),
+            )
+          : and(
+              or(
+                eq(privateConversation.userAId, userId),
+                eq(privateConversation.userBId, userId),
+              ),
+              isNotNull(conversation.lastMessage),
+            ),
       )
-      .orderBy(desc(conversation.updatedAt));
+      .orderBy(desc(conversation.updatedAt))
+      .limit(limit + 1);
 
-    return conversations;
+    const hasMore = chats.length > limit;
+    const conversations = hasMore ? chats.slice(0, limit) : chats;
+
+    return {
+      conversations,
+      nextCursor: hasMore
+        ? conversations[conversations.length - 1].conversationId
+        : undefined,
+    };
   });
 
 export const getOtherUserConversationInfoFn = createServerFn()
