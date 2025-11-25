@@ -17,6 +17,20 @@ io.on('connection', (socket) => {
   socket.on('send_message', (message: MessageWithSender) => {
     io.to(`chat:${message.conversationId}`).emit('new_message', message);
   });
+
+  socket.on('join_user_room', (userId: string) => {
+    socket.join(`user:${userId}`);
+  });
+
+  socket.on('leave_user_room', (userId: string) => {
+    socket.leave(`user:${userId}`);
+  });
+
+  socket.on('notify_chat', (participantsId: string[]) => {
+    for (const userId of participantsId) {
+      io.to(`user:${userId}`).emit('conversation_updated');
+    }
+  });
 });
 
 io.listen(4000);

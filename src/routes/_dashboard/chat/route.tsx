@@ -1,6 +1,8 @@
 import { SidebarSection } from '@/components/sidebar/sidebar-section';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useUserSocket } from '@/hooks/use-user-socket';
+import { getSessionFn } from '@/lib/fn/auth-fn';
 import { getCurrentUserConversationsFn } from '@/lib/fn/conversation-fn';
 import { cn } from '@/lib/utils';
 import {
@@ -17,7 +19,15 @@ export const Route = createFileRoute('/_dashboard/chat')({
   component: RouteComponent,
   loader: async () => {
     try {
-      return await getCurrentUserConversationsFn({ data: {} });
+      const [conversations, currentSession] = await Promise.all([
+        getCurrentUserConversationsFn({ data: {} }),
+        getSessionFn(),
+      ]);
+      return {
+        conversations: conversations.conversations,
+        nextCursor: conversations.nextCursor,
+        currentUserId: currentSession.session.data?.user.id,
+      };
     } catch (err) {
       if (err instanceof Response && err.status === 401) {
         throw redirect({ to: '/login' });
@@ -28,14 +38,19 @@ export const Route = createFileRoute('/_dashboard/chat')({
 });
 
 function RouteComponent() {
-  const { conversations: initialConversations, nextCursor: initialCursor } =
-    Route.useLoaderData();
+  const {
+    conversations: initialConversations,
+    nextCursor: initialCursor,
+    currentUserId,
+  } = Route.useLoaderData();
   const navigate = useNavigate();
   const location = useLocation().pathname.slice(6);
   const [conversations, setConversations] = useState(initialConversations);
   const [cursor, setCursor] = useState(initialCursor);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(!!initialCursor);
+
+  useUserSocket(currentUserId);
 
   useEffect(() => {
     setConversations(initialConversations);

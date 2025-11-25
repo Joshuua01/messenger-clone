@@ -134,6 +134,7 @@ export const getOtherUserConversationInfoFn = createServerFn()
 
     const conversationInfo = await db
       .select({
+        otherUserId: user.id,
         otherUserName: user.name,
         otherUserImage: user.image,
       })
@@ -258,4 +259,23 @@ export const sendMessageFn = createServerFn()
 
       return messageWithUser;
     });
+  });
+
+export const getConversationParticipants = createServerFn()
+  .inputValidator(z.string())
+  .middleware([withAuth])
+  .handler(async ({ data }) => {
+    const conversationId = data;
+
+    const [conversation] = await db
+      .select()
+      .from(privateConversation)
+      .where(eq(privateConversation.conversationId, conversationId));
+
+    if (conversation) {
+      const participants = [conversation.userAId, conversation.userBId];
+      return participants;
+    }
+
+    return [];
   });

@@ -56,7 +56,6 @@ function RouteComponent() {
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
   const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
     requestAnimationFrame(() => {
@@ -85,10 +84,6 @@ function RouteComponent() {
   useChatSocket(conversationId, (message) => {
     setMessages((prevMessages) => [...prevMessages, message]);
     setShouldScrollToBottom(true);
-
-    router.invalidate({
-      filter: (route) => route.routeId === '/_dashboard/chat',
-    });
   });
 
   const messageForm = useForm({
@@ -109,6 +104,10 @@ function RouteComponent() {
           },
         });
         socket.emit('send_message', savedMessage);
+        socket.emit('notify_chat', [
+          currentUserId,
+          conversationInfo.otherUserId,
+        ]);
         messageForm.reset();
       } catch (error) {
         toast.error('Failed to send message. Please try again.');
