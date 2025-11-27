@@ -1,5 +1,5 @@
 import { MessageBubble } from '@/components/chat/message-bubble';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -8,17 +8,16 @@ import { useChatSocket } from '@/hooks/use-chat-socket';
 import { getSessionFn } from '@/lib/fn/auth-fn';
 import {
   getMessagesForConversationFn,
-  sendMessageFn,
   getOtherUserConversationInfoFn,
+  sendMessageFn,
 } from '@/lib/fn/conversation-fn';
 import { socket } from '@/lib/socket';
 import { MessageWithSender } from '@/lib/types';
 import { cn, formatDate } from '@/lib/utils';
 import { useForm } from '@tanstack/react-form';
-import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { ArrowDown } from 'lucide-react';
-import React from 'react';
-import { useEffect, useRef, useState, useLayoutEffect } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/_dashboard/chat/$chatId')({
@@ -57,6 +56,15 @@ function RouteComponent() {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const { isTyping, emitTyping } = useChatSocket(
+    conversationId,
+    currentUserId!,
+    (message) => {
+      setMessages((prevMessages) => [...prevMessages, message]);
+      setShouldScrollToBottom(true);
+    },
+  );
+
   const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
     requestAnimationFrame(() => {
       scrollRef.current?.scrollIntoView({ behavior, block: 'end' });
@@ -75,16 +83,15 @@ function RouteComponent() {
   }, [conversationId]);
 
   useEffect(() => {
+    if (isTyping && isAtBottom) scrollToBottom('smooth');
+  }, [isTyping]);
+
+  useEffect(() => {
     if (shouldScrollToBottom) {
       scrollToBottom('smooth');
       setShouldScrollToBottom(false);
     }
   }, [messages, shouldScrollToBottom]);
-
-  useChatSocket(conversationId, (message) => {
-    setMessages((prevMessages) => [...prevMessages, message]);
-    setShouldScrollToBottom(true);
-  });
 
   const messageForm = useForm({
     defaultValues: {
@@ -210,6 +217,13 @@ function RouteComponent() {
                 No messages yet. Start the conversation!
               </div>
             )}
+            {isTyping && (
+              <div className="px-3 py-4 rounded-lg bg-muted justify-self-start flex gap-2 items-center w-fit ml-12">
+                <div className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <div className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.15s]" />
+                <div className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce" />
+              </div>
+            )}
             <div ref={scrollRef} />
             <div
               className={cn(
@@ -242,7 +256,10 @@ function RouteComponent() {
                 name={field.name}
                 value={field.state.value}
                 onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
+                onChange={(e) => {
+                  field.handleChange(e.target.value);
+                  emitTyping();
+                }}
                 placeholder="Type your message..."
                 autoComplete="off"
               />

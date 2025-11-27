@@ -31,6 +31,14 @@ io.on('connection', (socket) => {
       io.to(`user:${userId}`).emit('conversation_updated');
     }
   });
+
+  socket.on('typing', (conversationId: string, userId: string) => {
+    socket.to(`chat:${conversationId}`).emit('user_typing', userId);
+  });
+
+  socket.on('stop_typing', (conversationId: string, userId: string) => {
+    socket.to(`chat:${conversationId}`).emit('user_stop_typing', userId);
+  });
 });
 
 io.listen(4000);
