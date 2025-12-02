@@ -1,6 +1,7 @@
 import { AlertButton } from '@/components/alert-button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { signOut, useSession } from '@/lib/auth-client';
+import { socket } from '@/lib/socket';
 import {
   createFileRoute,
   Link,
@@ -26,12 +27,19 @@ function RouteComponent() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const disconnectUserSocket = (userId?: string) => {
+    if (!socket.connected) return;
+    if (userId) socket.emit('leave_user_room', userId);
+    socket.disconnect();
+  };
+
   const handleSignOut = async () => {
     const result = await signOut();
     if (result.error) {
       toast.error(`${result.error.message}`);
       return;
     }
+    disconnectUserSocket(session.data?.user?.id);
     toast.success('Signed out successfully');
     navigate({
       to: '/login',

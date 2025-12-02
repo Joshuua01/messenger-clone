@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { useChatSocket } from '@/hooks/use-chat-socket';
+import { usePresence } from '@/hooks/use-presence';
 import { getSessionFn } from '@/lib/fn/auth-fn';
 import {
   getMessagesForConversationFn,
@@ -70,6 +71,8 @@ function RouteComponent() {
       scrollRef.current?.scrollIntoView({ behavior, block: 'end' });
     });
   };
+
+  const presence = usePresence([conversationInfo.otherUserId]);
 
   useLayoutEffect(() => {
     scrollToBottom('auto');
@@ -171,7 +174,11 @@ function RouteComponent() {
     <div className="flex-1 h-full overflow-hidden">
       <div className="bg-card text-card-foreground flex flex-col rounded-xl border shadow-sm h-full overflow-hidden">
         <header className="p-6 border-b flex items-center gap-4">
-          <Avatar>
+          <Avatar
+            className={cn(
+              presence[conversationInfo.otherUserId] && 'ring-3 ring-green-500',
+            )}
+          >
             <AvatarImage src={conversationInfo?.otherUserImage ?? undefined} />
             <AvatarFallback>
               {conversationInfo?.otherUserName?.[0] ?? 'U'}

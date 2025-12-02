@@ -1,6 +1,7 @@
 import { SidebarSection } from '@/components/sidebar/sidebar-section';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { usePresence } from '@/hooks/use-presence';
 import { useUserSocket } from '@/hooks/use-user-socket';
 import { getSessionFn } from '@/lib/fn/auth-fn';
 import { getCurrentUserConversationsFn } from '@/lib/fn/conversation-fn';
@@ -49,8 +50,10 @@ function RouteComponent() {
   const [cursor, setCursor] = useState(initialCursor);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(!!initialCursor);
+  const trackedUsersIds = conversations.map((c) => c.otherUserId);
 
   useUserSocket(currentUserId);
+  const presence = usePresence(trackedUsersIds);
 
   useEffect(() => {
     setConversations(initialConversations);
@@ -113,7 +116,13 @@ function RouteComponent() {
                     })
                   }
                 >
-                  <Avatar className="w-12 h-12">
+                  <Avatar
+                    className={cn(
+                      'w-12 h-12',
+                      presence[conversation.otherUserId] &&
+                        'ring-3 ring-green-500',
+                    )}
+                  >
                     <AvatarImage
                       src={conversation.otherUserImage ?? undefined}
                     />
