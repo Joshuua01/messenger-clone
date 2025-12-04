@@ -1,294 +1,101 @@
-import { MessageBubble } from '@/components/chat/message-bubble';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { ChatHeader } from '@/components/chat/chat-header';
+import { MessageInput } from '@/components/chat/message-input';
+import { MessageList } from '@/components/chat/message-list';
+import { ScrollToButtomButton } from '@/components/chat/scroll-to-bottom-button';
+import { TypingIndicator } from '@/components/chat/typing-indicator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Spinner } from '@/components/ui/spinner';
 import { useChatSocket } from '@/hooks/use-chat-socket';
+import { usePaginatedMessages } from '@/hooks/use-paginated-messages';
 import { usePresence } from '@/hooks/use-presence';
+import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
+import { useSendMessage } from '@/hooks/use-send-message';
 import { getSessionFn } from '@/lib/fn/auth-fn';
-import {
-  getMessagesForConversationFn,
-  getOtherUserConversationInfoFn,
-  sendMessageFn,
-} from '@/lib/fn/conversation-fn';
-import { socket } from '@/lib/socket';
-import { MessageWithSender } from '@/lib/types';
-import { cn, formatDate } from '@/lib/utils';
-import { useForm } from '@tanstack/react-form';
+import { getMessagesForConversationFn, getOtherUserInfoFn } from '@/lib/fn/conversation-fn';
 import { createFileRoute } from '@tanstack/react-router';
-import { ArrowDown } from 'lucide-react';
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import React, { useEffect, useLayoutEffect } from 'react';
 
 export const Route = createFileRoute('/_dashboard/chat/$chatId')({
   component: RouteComponent,
   loader: async ({ params }) => {
     const { chatId } = params;
-    const [chatData, currentSession, conversationInfo] = await Promise.all([
+    const [chatData, currentSession, otherUserInfo] = await Promise.all([
       getMessagesForConversationFn({ data: { conversationId: chatId } }),
       getSessionFn(),
-      getOtherUserConversationInfoFn({ data: chatId }),
+      getOtherUserInfoFn({ data: chatId }),
     ]);
 
     return {
       chatMessages: chatData.messages,
-      nextCursor: chatData.nextCursor,
+      initialCursor: chatData.nextCursor,
       currentUserId: currentSession.session.data?.user.id,
-      conversationInfo,
+      otherUserInfo,
     };
   },
 });
 
 function RouteComponent() {
   const { chatId: conversationId } = Route.useParams();
-  const {
-    chatMessages,
-    nextCursor: initialCursor,
-    currentUserId,
-    conversationInfo,
-  } = Route.useLoaderData();
+  const { chatMessages, initialCursor, currentUserId, otherUserInfo } = Route.useLoaderData();
 
-  const [messages, setMessages] = useState(chatMessages);
-  const [cursor, setCursor] = useState(initialCursor);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(!!initialCursor);
-  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
-  const [isAtBottom, setIsAtBottom] = useState(true);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const { scrollRef, isAtBottom, scrollToBottom, checkScrollPosition } = useScrollToBottom();
 
-  const { isTyping, emitTyping } = useChatSocket(
+  const { addMessage, hasMore, isLoading, loadMore, messages } = usePaginatedMessages({
+    initialMessages: chatMessages,
+    initialCursor,
     conversationId,
-    currentUserId!,
-    (message) => {
-      setMessages((prevMessages) => [...prevMessages, message]);
-      setShouldScrollToBottom(true);
-    },
-  );
+  });
 
-  const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
-    requestAnimationFrame(() => {
-      scrollRef.current?.scrollIntoView({ behavior, block: 'end' });
-    });
-  };
+  const { isTyping, emitTyping } = useChatSocket(conversationId, currentUserId!, (message) => {
+    addMessage(message);
+    scrollToBottom('smooth');
+  });
 
-  const presence = usePresence([conversationInfo.otherUserId]);
+  const presence = usePresence([otherUserInfo.otherUserId]);
 
   useLayoutEffect(() => {
-    scrollToBottom('auto');
-  }, [conversationId]);
-
-  useEffect(() => {
-    setMessages(chatMessages);
-    setShouldScrollToBottom(true);
-    setCursor(initialCursor);
-    setHasMore(!!initialCursor);
-  }, [conversationId]);
+    scrollToBottom();
+  }, [conversationId, scrollToBottom]);
 
   useEffect(() => {
     if (isTyping && isAtBottom) scrollToBottom('smooth');
-  }, [isTyping]);
+  }, [isTyping, isAtBottom, scrollToBottom]);
 
-  useEffect(() => {
-    if (shouldScrollToBottom) {
-      scrollToBottom('smooth');
-      setShouldScrollToBottom(false);
-    }
-  }, [messages, shouldScrollToBottom]);
-
-  const messageForm = useForm({
-    defaultValues: {
-      message: '',
-    },
-    onSubmit: async ({ value }) => {
-      const trimmedMessage = value.message.trim();
-
-      if (!currentUserId || !trimmedMessage) return;
-
-      try {
-        const savedMessage = await sendMessageFn({
-          data: {
-            conversationId,
-            senderId: currentUserId!,
-            content: trimmedMessage,
-          },
-        });
-        socket.emit('send_message', savedMessage);
-        socket.emit('notify_chat', [
-          currentUserId,
-          conversationInfo.otherUserId,
-        ]);
-        messageForm.reset();
-      } catch (error) {
-        toast.error('Failed to send message. Please try again.');
-        return;
-      }
-    },
+  const sendMessage = useSendMessage({
+    conversationId,
+    currentUserId: currentUserId,
+    otherUserId: otherUserInfo.otherUserId,
   });
-
-  const loadMoreMessages = async () => {
-    if (!hasMore || isLoadingMore || !cursor) return;
-
-    try {
-      setIsLoadingMore(true);
-      const { messages: olderMessages, nextCursor: newCursor } =
-        await getMessagesForConversationFn({
-          data: { conversationId, cursor },
-        });
-      setMessages((prevMessages) => [...olderMessages, ...prevMessages]);
-      setCursor(newCursor);
-      setHasMore(!!newCursor);
-    } catch (error) {
-      toast.error('Failed to load more messages. Please try again.');
-    } finally {
-      setIsLoadingMore(false);
-    }
-  };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget as HTMLDivElement;
-    if (target.scrollTop < 50 && hasMore && !isLoadingMore) {
-      loadMoreMessages();
+    if (target.scrollTop < 50 && hasMore && !isLoading) {
+      loadMore();
     }
 
-    if (target.scrollHeight - target.scrollTop - target.clientHeight < 100) {
-      setIsAtBottom(true);
-    } else {
-      setIsAtBottom(false);
-    }
-  };
-
-  const shouldShowDateSeparator = (
-    currentMessage: MessageWithSender,
-    previousMessage: MessageWithSender | null,
-  ) => {
-    if (!previousMessage) return true;
-
-    const currentDate = new Date(currentMessage.createdAt).toDateString();
-    const previousDate = new Date(previousMessage.createdAt).toDateString();
-
-    return currentDate !== previousDate;
+    checkScrollPosition(target);
   };
 
   return (
     <div className="flex-1 h-full overflow-hidden">
       <div className="bg-card text-card-foreground flex flex-col rounded-xl border shadow-sm h-full overflow-hidden">
-        <header className="p-6 border-b flex items-center gap-4">
-          <Avatar
-            className={cn(
-              presence[conversationInfo.otherUserId] && 'ring-3 ring-green-500',
-            )}
-          >
-            <AvatarImage src={conversationInfo?.otherUserImage ?? undefined} />
-            <AvatarFallback>
-              {conversationInfo?.otherUserName?.[0] ?? 'U'}
-            </AvatarFallback>
-          </Avatar>
-          <h1 className="text-xl font-semibold">
-            {conversationInfo?.otherUserName || 'Unknown User'}
-          </h1>
-        </header>
-
+        <ChatHeader
+          isOnline={presence[otherUserInfo.otherUserId]}
+          userName={otherUserInfo.otherUserName}
+          imageUrl={otherUserInfo.otherUserImage}
+        />
         <ScrollArea
-          key={conversationId}
           className="flex-1 min-h-0 px-6 py-1"
           onScroll={handleScroll}
+          key={conversationId}
         >
           <div className="flex flex-col gap-3">
-            {isLoadingMore && (
-              <div className="flex justify-center py-3">
-                <Spinner className="h-8 w-8" />
-              </div>
-            )}
-            {messages.length ? (
-              messages.map((message, index) => (
-                <React.Fragment key={message.messageId}>
-                  {shouldShowDateSeparator(message, messages[index - 1]) && (
-                    <div className="flex justify-center my-4">
-                      <span className="bg-muted text-muted-foreground text-xs font-medium px-3 py-1 rounded-full">
-                        {formatDate(message.createdAt)}
-                      </span>
-                    </div>
-                  )}
-                  <MessageBubble
-                    content={message.content}
-                    isOwn={message.senderId === currentUserId}
-                    senderName={message.senderName}
-                    senderImage={message.senderImage}
-                    timestamp={message.createdAt}
-                  />
-                </React.Fragment>
-              ))
-            ) : (
-              <div className="flex justify-center items-center h-full mt-10 text-muted-foreground font-semibold">
-                No messages yet. Start the conversation!
-              </div>
-            )}
-            {isTyping && (
-              <div className="px-3 py-4 rounded-lg bg-muted justify-self-start flex gap-2 items-center w-fit ml-12">
-                <div className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.3s]" />
-                <div className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.15s]" />
-                <div className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce" />
-              </div>
-            )}
+            <MessageList messages={messages} isLoading={isLoading} currentUserId={currentUserId} />
+            {isTyping && <TypingIndicator />}
             <div ref={scrollRef} />
-            <div
-              className={cn(
-                'absolute bottom-0 left-1/2 transform -translate-x-1/2 transition-all duration-300 ease-in-out p-2 rounded-full bg-muted-foreground/30 cursor-pointer',
-                isAtBottom
-                  ? 'opacity-0 translate-y-4 pointer-events-none'
-                  : 'opacity-100 translate-y-0',
-              )}
-              onClick={() => {
-                scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-              }}
-            >
-              <ArrowDown className="h-6 w-6" strokeWidth={2.5} />
-            </div>
+            <ScrollToButtomButton isAtBottom={isAtBottom} scrollRef={scrollRef} />
           </div>
         </ScrollArea>
-
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            messageForm.handleSubmit();
-          }}
-          className="flex gap-4 items-center p-6"
-        >
-          <messageForm.Field name="message">
-            {(field) => (
-              <Input
-                id={field.name}
-                name={field.name}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => {
-                  field.handleChange(e.target.value);
-                  emitTyping();
-                }}
-                placeholder="Type your message..."
-                autoComplete="off"
-              />
-            )}
-          </messageForm.Field>
-
-          <messageForm.Subscribe
-            selector={(state) => [state.canSubmit, state.isSubmitting]}
-          >
-            {([canSubmit, isSubmitting]) => (
-              <Button type="submit" disabled={!canSubmit}>
-                {isSubmitting ? (
-                  <>
-                    <Spinner /> Sending...
-                  </>
-                ) : (
-                  'Send'
-                )}
-              </Button>
-            )}
-          </messageForm.Subscribe>
-        </form>
+        <MessageInput onSend={sendMessage} onTyping={emitTyping} />
       </div>
     </div>
   );

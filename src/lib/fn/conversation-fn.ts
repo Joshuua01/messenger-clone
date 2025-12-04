@@ -1,10 +1,5 @@
 import { db } from '@/server/db';
-import {
-  conversation,
-  message,
-  privateConversation,
-  user,
-} from '@/server/db/schema';
+import { conversation, message, privateConversation, user } from '@/server/db/schema';
 import { createServerFn } from '@tanstack/react-start';
 import { and, desc, eq, isNotNull, or, lt } from 'drizzle-orm';
 import z from 'zod';
@@ -70,30 +65,18 @@ export const getCurrentUserConversationsFn = createServerFn()
         otherUserImage: user.image,
       })
       .from(conversation)
-      .innerJoin(
-        privateConversation,
-        eq(conversation.id, privateConversation.conversationId),
-      )
+      .innerJoin(privateConversation, eq(conversation.id, privateConversation.conversationId))
       .innerJoin(
         user,
         or(
-          and(
-            eq(privateConversation.userAId, user.id),
-            eq(privateConversation.userBId, userId),
-          ),
-          and(
-            eq(privateConversation.userBId, user.id),
-            eq(privateConversation.userAId, userId),
-          ),
+          and(eq(privateConversation.userAId, user.id), eq(privateConversation.userBId, userId)),
+          and(eq(privateConversation.userBId, user.id), eq(privateConversation.userAId, userId)),
         ),
       )
       .where(
         cursor
           ? and(
-              or(
-                eq(privateConversation.userAId, userId),
-                eq(privateConversation.userBId, userId),
-              ),
+              or(eq(privateConversation.userAId, userId), eq(privateConversation.userBId, userId)),
               isNotNull(conversation.lastMessage),
               lt(
                 conversation.updatedAt,
@@ -105,10 +88,7 @@ export const getCurrentUserConversationsFn = createServerFn()
               ),
             )
           : and(
-              or(
-                eq(privateConversation.userAId, userId),
-                eq(privateConversation.userBId, userId),
-              ),
+              or(eq(privateConversation.userAId, userId), eq(privateConversation.userBId, userId)),
               isNotNull(conversation.lastMessage),
             ),
       )
@@ -120,13 +100,11 @@ export const getCurrentUserConversationsFn = createServerFn()
 
     return {
       conversations,
-      nextCursor: hasMore
-        ? conversations[conversations.length - 1].conversationId
-        : undefined,
+      nextCursor: hasMore ? conversations[conversations.length - 1].conversationId : undefined,
     };
   });
 
-export const getOtherUserConversationInfoFn = createServerFn()
+export const getOtherUserInfoFn = createServerFn()
   .inputValidator(z.string())
   .middleware([withAuth])
   .handler(async ({ data, context }) => {
@@ -140,10 +118,7 @@ export const getOtherUserConversationInfoFn = createServerFn()
         otherUserImage: user.image,
       })
       .from(conversation)
-      .innerJoin(
-        privateConversation,
-        eq(conversation.id, privateConversation.conversationId),
-      )
+      .innerJoin(privateConversation, eq(conversation.id, privateConversation.conversationId))
       .innerJoin(
         user,
         or(
@@ -172,52 +147,48 @@ export const getMessagesForConversationFn = createServerFn()
     }),
   )
   .middleware([withAuth])
-  .handler(
-    async ({
-      data,
-    }): Promise<{ messages: MessageWithSender[]; nextCursor?: string }> => {
-      const { conversationId, cursor, limit } = data;
+  .handler(async ({ data }): Promise<{ messages: MessageWithSender[]; nextCursor?: string }> => {
+    const { conversationId, cursor, limit } = data;
 
-      const messages = await db
-        .select({
-          messageId: message.id,
-          conversationId: message.conversationId,
-          content: message.content,
-          createdAt: message.createdAt,
-          senderId: user.id,
-          senderName: user.name,
-          senderImage: user.image,
-        })
-        .from(message)
-        .innerJoin(user, eq(message.senderId, user.id))
-        .where(
-          cursor
-            ? and(
-                eq(message.conversationId, conversationId),
-                lt(
-                  message.createdAt,
-                  db
-                    .select({ createdAt: message.createdAt })
-                    .from(message)
-                    .where(eq(message.id, cursor))
-                    .limit(1),
-                ),
-              )
-            : eq(message.conversationId, conversationId),
-        )
-        .orderBy(desc(message.createdAt))
-        .limit(limit + 1);
+    const messages = await db
+      .select({
+        messageId: message.id,
+        conversationId: message.conversationId,
+        content: message.content,
+        createdAt: message.createdAt,
+        senderId: user.id,
+        senderName: user.name,
+        senderImage: user.image,
+      })
+      .from(message)
+      .innerJoin(user, eq(message.senderId, user.id))
+      .where(
+        cursor
+          ? and(
+              eq(message.conversationId, conversationId),
+              lt(
+                message.createdAt,
+                db
+                  .select({ createdAt: message.createdAt })
+                  .from(message)
+                  .where(eq(message.id, cursor))
+                  .limit(1),
+              ),
+            )
+          : eq(message.conversationId, conversationId),
+      )
+      .orderBy(desc(message.createdAt))
+      .limit(limit + 1);
 
-      const hasMore = messages.length > limit;
-      const paginatedMessages = hasMore ? messages.slice(0, limit) : messages;
-      paginatedMessages.reverse();
+    const hasMore = messages.length > limit;
+    const paginatedMessages = hasMore ? messages.slice(0, limit) : messages;
+    paginatedMessages.reverse();
 
-      return {
-        messages: paginatedMessages,
-        nextCursor: hasMore ? paginatedMessages[0].messageId : undefined,
-      };
-    },
-  );
+    return {
+      messages: paginatedMessages,
+      nextCursor: hasMore ? paginatedMessages[0].messageId : undefined,
+    };
+  });
 
 export const sendMessageFn = createServerFn()
   .middleware([withAuth])

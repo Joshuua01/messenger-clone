@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn, formatTime, getInitials } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface MessageBubbleProps {
@@ -16,23 +16,6 @@ export const MessageBubble = ({
   senderImage,
   timestamp,
 }: MessageBubbleProps) => {
-  const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    }).format(new Date(date));
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   return (
     <div
       className={cn(
