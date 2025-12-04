@@ -1,8 +1,8 @@
 import { MessageWithSender } from '@/lib/types';
 import { formatDate, shouldShowDateSeparator } from '@/lib/utils';
-import { MessageBubble } from './message-bubble';
 import React from 'react';
 import { Spinner } from '../ui/spinner';
+import { MessageBubble } from './message-bubble';
 
 interface MessageListProps {
   isLoading: boolean;
@@ -22,8 +22,8 @@ export function MessageList({ isLoading, messages, currentUserId }: MessageListP
         messages.map((message, index) => (
           <React.Fragment key={message.messageId}>
             {shouldShowDateSeparator(message, messages[index - 1]) && (
-              <div className="flex justify-center my-4">
-                <span className="bg-muted text-muted-foreground text-xs font-medium px-3 py-1 rounded-full">
+              <div className="my-4 flex justify-center">
+                <span className="bg-muted text-muted-foreground rounded-full px-3 py-1 text-xs font-medium">
                   {formatDate(message.createdAt)}
                 </span>
               </div>
@@ -38,7 +38,7 @@ export function MessageList({ isLoading, messages, currentUserId }: MessageListP
           </React.Fragment>
         ))
       ) : (
-        <div className="flex justify-center items-center h-full mt-10 text-muted-foreground font-semibold">
+        <div className="text-muted-foreground mt-10 flex h-full items-center justify-center font-semibold">
           No messages yet. Start the conversation!
         </div>
       )}

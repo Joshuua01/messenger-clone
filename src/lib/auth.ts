@@ -1,8 +1,8 @@
 import { db } from '@/server/db';
+import * as schema from '@/server/db/schema';
 import { APIError, betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { reactStartCookies } from 'better-auth/react-start';
-import * as schema from '@/server/db/schema';
 import { deleteImageFn } from './fn/upload-fn';
 
 export const auth = betterAuth({

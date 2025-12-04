@@ -1,8 +1,8 @@
+import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { createServerFn } from '@tanstack/react-start';
 import z from 'zod';
-import { s3 } from '../s3';
-import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { withAuth } from '../middleware/auth-middleware';
+import { s3 } from '../s3';
 
 export const uploadImageFn = createServerFn({ method: 'POST' })
   .middleware([withAuth])

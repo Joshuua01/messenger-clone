@@ -1,10 +1,10 @@
 import { db } from '@/server/db';
 import { conversation, message, privateConversation, user } from '@/server/db/schema';
 import { createServerFn } from '@tanstack/react-start';
-import { and, desc, eq, isNotNull, or, lt } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, lt, or } from 'drizzle-orm';
 import z from 'zod';
-import { MessageWithSender } from '../types';
 import { withAuth } from '../middleware/auth-middleware';
+import { MessageWithSender } from '../types';
 
 const conversationFnSchema = z.object({
   participantIds: z.array(z.string()).length(2),

@@ -51,10 +51,7 @@ io.on('connection', (socket) => {
 
   socket.on(
     'request_presence',
-    (
-      userIds: string[],
-      callback: (presence: { userId: string; online: boolean }[]) => void,
-    ) => {
+    (userIds: string[], callback: (presence: { userId: string; online: boolean }[]) => void) => {
       const presence = userIds.map((userId) => ({
         userId,
         online: onlineUsers.has(userId),

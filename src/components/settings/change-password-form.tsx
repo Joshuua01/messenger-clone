@@ -48,7 +48,7 @@ export function ChangePasswordForm() {
           e.stopPropagation();
           changePasswordForm.handleSubmit();
         }}
-        className="flex flex-col gap-1 mt-4"
+        className="mt-4 flex flex-col gap-1"
       >
         <changePasswordForm.Field name="oldPassword">
           {(field) => (
@@ -89,15 +89,9 @@ export function ChangePasswordForm() {
           )}
         </changePasswordForm.Field>
 
-        <changePasswordForm.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-        >
+        <changePasswordForm.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
-            <Button
-              type="submit"
-              disabled={!canSubmit}
-              className="mt-2 font-bold self-end"
-            >
+            <Button type="submit" disabled={!canSubmit} className="mt-2 self-end font-bold">
               {isSubmitting ? (
                 <>
                   <Spinner /> Changing password...

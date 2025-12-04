@@ -44,8 +44,8 @@ function RouteComponent() {
   });
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-8">
-      <h1 className="font-bold text-4xl">
+    <div className="bg-background flex min-h-screen flex-col items-center justify-center gap-8">
+      <h1 className="text-4xl font-bold">
         <Link to="/">MessClone</Link>
       </h1>
       <form
@@ -54,7 +54,7 @@ function RouteComponent() {
           e.stopPropagation();
           form.handleSubmit();
         }}
-        className="flex flex-col w-1/4 gap-1"
+        className="flex w-1/4 flex-col gap-1"
       >
         <form.Field name="email">
           {(field) => (
@@ -80,16 +80,9 @@ function RouteComponent() {
           )}
         </form.Field>
 
-        <form.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-        >
+        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
-            <Button
-              type="submit"
-              disabled={!canSubmit}
-              size={'lg'}
-              className="mt-2 font-bold"
-            >
+            <Button type="submit" disabled={!canSubmit} size={'lg'} className="mt-2 font-bold">
               {isSubmitting ? (
                 <>
                   <Spinner /> Logging in...{' '}
@@ -103,10 +96,7 @@ function RouteComponent() {
       </form>
       <div className="text-sm">
         Don't have an account?{' '}
-        <Link
-          to="/register"
-          className="underline font-bold underline-offset-2 hover"
-        >
+        <Link to="/register" className="hover font-bold underline underline-offset-2">
           Register here
         </Link>
       </div>

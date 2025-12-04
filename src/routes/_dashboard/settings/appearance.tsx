@@ -1,11 +1,5 @@
 import { ModeToggle } from '@/components/mode-toggle';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_dashboard/settings/appearance')({
@@ -16,12 +10,8 @@ function RouteComponent() {
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold">
-          Appearance Settings
-        </CardTitle>
-        <CardDescription>
-          Customize the look and feel of your application.
-        </CardDescription>
+        <CardTitle className="text-2xl font-bold">Appearance Settings</CardTitle>
+        <CardDescription>Customize the look and feel of your application.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col pr-2 pl-1">

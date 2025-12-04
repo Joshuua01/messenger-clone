@@ -1,10 +1,5 @@
 import { SidebarSection } from '@/components/sidebar/sidebar-section';
-import {
-  createFileRoute,
-  Link,
-  Outlet,
-  useLocation,
-} from '@tanstack/react-router';
+import { createFileRoute, Link, Outlet, useLocation } from '@tanstack/react-router';
 import { Paintbrush, User } from 'lucide-react';
 
 export const Route = createFileRoute('/_dashboard/settings')({
@@ -25,7 +20,7 @@ function RouteComponent() {
 
   return (
     <>
-      <div className="w-96 shrink-0 h-full">
+      <div className="h-full w-96 shrink-0">
         <SidebarSection
           title="Settings"
           description="Manage your account settings and preferences."
@@ -37,7 +32,7 @@ function RouteComponent() {
               <Link
                 key={setting.to}
                 to={setting.to}
-                className={`font-medium mt-1 text-muted-foreground hover:text-primary transition-colors hover:bg-muted-foreground/20 p-3 rounded-lg flex items-center gap-5 ${
+                className={`text-muted-foreground hover:text-primary hover:bg-muted-foreground/20 mt-1 flex items-center gap-5 rounded-lg p-3 font-medium transition-colors ${
                   isActive ? 'bg-muted-foreground/20 text-primary' : ''
                 }`}
               >

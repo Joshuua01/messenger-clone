@@ -1,6 +1,6 @@
 import { useForm } from '@tanstack/react-form';
-import { Input } from '../ui/input';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 import { Spinner } from '../ui/spinner';
 
 interface MessageInputProps {
@@ -28,7 +28,7 @@ export function MessageInput({ onSend, onTyping }: MessageInputProps) {
         e.stopPropagation();
         form.handleSubmit();
       }}
-      className="flex gap-4 items-center p-6"
+      className="flex items-center gap-4 p-6"
     >
       <form.Field name="message">
         {(field) => (
@@ -47,9 +47,7 @@ export function MessageInput({ onSend, onTyping }: MessageInputProps) {
         )}
       </form.Field>
 
-      <form.Subscribe
-        selector={(state) => [state.canSubmit, state.isSubmitting]}
-      >
+      <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
         {([canSubmit, isSubmitting]) => (
           <Button type="submit" disabled={!canSubmit}>
             {isSubmitting ? (

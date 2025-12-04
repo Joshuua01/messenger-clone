@@ -76,15 +76,15 @@ function RouteComponent() {
   };
 
   return (
-    <div className="flex-1 h-full overflow-hidden">
-      <div className="bg-card text-card-foreground flex flex-col rounded-xl border shadow-sm h-full overflow-hidden">
+    <div className="h-full flex-1 overflow-hidden">
+      <div className="bg-card text-card-foreground flex h-full flex-col overflow-hidden rounded-xl border shadow-sm">
         <ChatHeader
           isOnline={presence[otherUserInfo.otherUserId]}
           userName={otherUserInfo.otherUserName}
           imageUrl={otherUserInfo.otherUserImage}
         />
         <ScrollArea
-          className="flex-1 min-h-0 px-6 py-1"
+          className="min-h-0 flex-1 px-6 py-1"
           onScroll={handleScroll}
           key={conversationId}
         >

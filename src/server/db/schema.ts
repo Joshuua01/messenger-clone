@@ -1,18 +1,7 @@
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import {
-  pgTable,
-  text,
-  timestamp,
-  boolean,
-  uuid,
-  uniqueIndex,
-  pgEnum,
-} from 'drizzle-orm/pg-core';
+import { boolean, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
-export const conversationTypeEnum = pgEnum('conversation_type', [
-  'private',
-  'group',
-]);
+export const conversationTypeEnum = pgEnum('conversation_type', ['private', 'group']);
 
 // Auth tables
 
@@ -99,9 +88,7 @@ export const privateConversation = pgTable(
     userAId: text('user_a_id').notNull(),
     userBId: text('user_b_id').notNull(),
   },
-  (t) => [
-    uniqueIndex('uq_private_conversation_users').on(t.userAId, t.userBId),
-  ],
+  (t) => [uniqueIndex('uq_private_conversation_users').on(t.userAId, t.userBId)],
 );
 
 export const message = pgTable('message', {
@@ -122,9 +109,5 @@ export type UserInsert = InferInsertModel<typeof user>;
 export type ConversationSelect = InferSelectModel<typeof conversation>;
 export type ConversationInsert = InferInsertModel<typeof conversation>;
 
-export type PrivateConversationSelect = InferSelectModel<
-  typeof privateConversation
->;
-export type PrivateConversationInsert = InferInsertModel<
-  typeof privateConversation
->;
+export type PrivateConversationSelect = InferSelectModel<typeof privateConversation>;
+export type PrivateConversationInsert = InferInsertModel<typeof privateConversation>;

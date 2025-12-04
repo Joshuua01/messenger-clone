@@ -10,13 +10,7 @@ export function usePresence(ids: Array<string>) {
 
     if (!socket.connected) socket.connect();
 
-    const handleUpdate = ({
-      userId,
-      online,
-    }: {
-      userId: string;
-      online: boolean;
-    }) => {
+    const handleUpdate = ({ userId, online }: { userId: string; online: boolean }) => {
       if (!userIds.includes(userId)) return;
 
       setState((prev) => ({

@@ -9,7 +9,7 @@ interface ChatHeaderProps {
 
 export function ChatHeader({ isOnline, userName, imageUrl }: ChatHeaderProps) {
   return (
-    <header className="p-6 border-b flex items-center gap-4">
+    <header className="flex items-center gap-4 border-b p-6">
       <Avatar className={cn(isOnline && 'ring-3 ring-green-500')}>
         <AvatarImage src={imageUrl ?? undefined} />
         <AvatarFallback>{getInitials(userName)}</AvatarFallback>

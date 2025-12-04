@@ -42,7 +42,7 @@ export function ChangeNameForm() {
           e.stopPropagation();
           changeNameForm.handleSubmit();
         }}
-        className="flex flex-col gap-1 mt-4"
+        className="mt-4 flex flex-col gap-1"
       >
         <changeNameForm.Field name="name">
           {(field) => (
@@ -57,15 +57,9 @@ export function ChangeNameForm() {
           )}
         </changeNameForm.Field>
 
-        <changeNameForm.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-        >
+        <changeNameForm.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
-            <Button
-              type="submit"
-              disabled={!canSubmit}
-              className="mt-2 font-bold self-end"
-            >
+            <Button type="submit" disabled={!canSubmit} className="mt-2 self-end font-bold">
               {isSubmitting ? (
                 <>
                   <Spinner /> Updating name...

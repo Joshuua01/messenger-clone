@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-
 import { socket } from '@/lib/socket';
 import type { MessageWithSender } from '@/lib/types';
 

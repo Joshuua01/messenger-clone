@@ -70,10 +70,7 @@ function RouteComponent() {
         await getCurrentUserConversationsFn({
           data: { cursor },
         });
-      setConversations((prevConversations) => [
-        ...prevConversations,
-        ...olderChats,
-      ]);
+      setConversations((prevConversations) => [...prevConversations, ...olderChats]);
       setCursor(newCursor);
       setHasMore(!!newCursor);
     } catch (error) {
@@ -93,8 +90,8 @@ function RouteComponent() {
   };
 
   return (
-    <div className="flex flex-1 h-full gap-2">
-      <div className="w-96 shrink-0 h-full flex flex-col">
+    <div className="flex h-full flex-1 gap-2">
+      <div className="flex h-full w-96 shrink-0 flex-col">
         <SidebarSection
           title="Recent Chats"
           description="View and manage your recent conversations."
@@ -105,7 +102,7 @@ function RouteComponent() {
                 <div
                   key={conversation.conversationId}
                   className={cn(
-                    'flex gap-4 px-2 py-3 items-center hover:bg-accent rounded-md cursor-pointer transition-colors',
+                    'hover:bg-accent flex cursor-pointer items-center gap-4 rounded-md px-2 py-3 transition-colors',
                     {
                       'bg-accent': location === conversation.conversationId,
                     },
@@ -118,30 +115,23 @@ function RouteComponent() {
                 >
                   <Avatar
                     className={cn(
-                      'w-12 h-12',
-                      presence[conversation.otherUserId] &&
-                        'ring-3 ring-green-500',
+                      'h-12 w-12',
+                      presence[conversation.otherUserId] && 'ring-3 ring-green-500',
                     )}
                   >
-                    <AvatarImage
-                      src={conversation.otherUserImage ?? undefined}
-                    />
-                    <AvatarFallback>
-                      {conversation.otherUserName?.[0] ?? 'U'}
-                    </AvatarFallback>
+                    <AvatarImage src={conversation.otherUserImage ?? undefined} />
+                    <AvatarFallback>{conversation.otherUserName?.[0] ?? 'U'}</AvatarFallback>
                   </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold">
-                      {conversation.otherUserName}
-                    </h3>
-                    <p className="text-sm text-gray-500 truncate max-w-[220px]">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold">{conversation.otherUserName}</h3>
+                    <p className="max-w-[220px] truncate text-sm text-gray-500">
                       {conversation.lastMessage ?? 'No messages yet.'}
                     </p>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="py-8 text-sm text-muted-foreground flex justify-center items-center">
+              <div className="text-muted-foreground flex items-center justify-center py-8 text-sm">
                 No conversations found. Start a new chat!
               </div>
             )}
@@ -149,7 +139,7 @@ function RouteComponent() {
         </SidebarSection>
       </div>
 
-      <div className="flex-1 flex">
+      <div className="flex flex-1">
         <Outlet />
       </div>
     </div>

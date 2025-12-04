@@ -4,13 +4,7 @@ import { ChangeNameForm } from '@/components/settings/change-name-form';
 import { ChangePasswordForm } from '@/components/settings/change-password-form';
 import { ChangeProfilePictureForm } from '@/components/settings/change-profile-picture-form';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { authClient } from '@/lib/auth-client';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
@@ -42,9 +36,7 @@ function RouteComponent() {
     <Card className="h-full">
       <CardHeader>
         <CardTitle className="text-2xl font-bold">Profile Settings</CardTitle>
-        <CardDescription>
-          Update your personal information and account details.
-        </CardDescription>
+        <CardDescription>Update your personal information and account details.</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
         <ScrollArea className="h-full w-full overflow-auto pr-2 pl-1">
@@ -56,8 +48,8 @@ function RouteComponent() {
 
           <ChangeEmailForm />
 
-          <div className="flex flex-col items-center mt-6">
-            <h1 className="text-lg font-bold self-start">Delete account</h1>
+          <div className="mt-6 flex flex-col items-center">
+            <h1 className="self-start text-lg font-bold">Delete account</h1>
 
             <AlertButton
               onClick={handleUserDeletion}

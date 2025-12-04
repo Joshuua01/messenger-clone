@@ -1,4 +1,12 @@
+import { useSession } from '@/lib/auth-client';
+import { createPrivateConversationFn } from '@/lib/fn/conversation-fn';
+import { searchUserFn } from '@/lib/fn/user-fn';
+import { UserSelect } from '@/server/db/schema';
+import { useNavigate } from '@tanstack/react-router';
+import { Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import {
   CommandDialog,
   CommandEmpty,
@@ -7,14 +15,6 @@ import {
   CommandItem,
   CommandList,
 } from '../ui/command';
-import { Search } from 'lucide-react';
-import { searchUserFn } from '@/lib/fn/user-fn';
-import { UserSelect } from '@/server/db/schema';
-import { toast } from 'sonner';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { useSession } from '@/lib/auth-client';
-import { createPrivateConversationFn } from '@/lib/fn/conversation-fn';
-import { useNavigate } from '@tanstack/react-router';
 
 export function SearchUserDialog() {
   const [open, setOpen] = useState(false);
@@ -31,9 +31,7 @@ export function SearchUserDialog() {
           setUsers(results);
         } catch (error) {
           toast.error(
-            error instanceof Error
-              ? error.message
-              : 'An error occurred while searching for users.',
+            error instanceof Error ? error.message : 'An error occurred while searching for users.',
           );
           setUsers([]);
         }
@@ -53,10 +51,7 @@ export function SearchUserDialog() {
     }
   };
 
-  const handleConversationCreate = async (
-    userId: string,
-    currentUserId: string,
-  ) => {
+  const handleConversationCreate = async (userId: string, currentUserId: string) => {
     try {
       const result = await createPrivateConversationFn({
         data: {
@@ -69,28 +64,20 @@ export function SearchUserDialog() {
       setUsers([]);
       navigate({ to: `/chat/${result}` });
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Failed to create conversation.',
-      );
+      toast.error(error instanceof Error ? error.message : 'Failed to create conversation.');
     }
   };
 
   return (
     <>
       <div
-        className="hover:text-primary hover:bg-muted-foreground/20 p-2 rounded-md cursor-pointer transition-colors"
+        className="hover:text-primary hover:bg-muted-foreground/20 cursor-pointer rounded-md p-2 transition-colors"
         onClick={() => setOpen(!open)}
       >
         <Search size={20} strokeWidth={2.5} />
       </div>
       <CommandDialog open={open} onOpenChange={handleOpenChange}>
-        <CommandInput
-          placeholder="Search for a user..."
-          value={search}
-          onValueChange={setSearch}
-        />
+        <CommandInput placeholder="Search for a user..." value={search} onValueChange={setSearch} />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
           {users.length > 0 && (
@@ -99,16 +86,12 @@ export function SearchUserDialog() {
                 <CommandItem
                   key={user.id}
                   value={user.name}
-                  onSelect={() =>
-                    handleConversationCreate(user.id, session.data!.user!.id)
-                  }
+                  onSelect={() => handleConversationCreate(user.id, session.data!.user!.id)}
                   className="cursor-pointer"
                 >
                   <Avatar>
                     <AvatarImage src={user.image ?? undefined} />
-                    <AvatarFallback>
-                      {user.name.charAt(0) ?? 'U'}
-                    </AvatarFallback>
+                    <AvatarFallback>{user.name.charAt(0) ?? 'U'}</AvatarFallback>
                   </Avatar>
                   <span className="ml-2">{user.name}</span>
                 </CommandItem>

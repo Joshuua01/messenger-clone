@@ -11,8 +11,7 @@ export function useScrollToBottom() {
   }, []);
 
   const checkScrollPosition = useCallback((target: HTMLDivElement) => {
-    const distanceFromBottom =
-      target.scrollHeight - target.scrollTop - target.clientHeight;
+    const distanceFromBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
     setIsAtBottom(distanceFromBottom < 100);
   }, []);
 

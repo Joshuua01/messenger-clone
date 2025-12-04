@@ -58,7 +58,7 @@ export function ChangeProfilePictureForm() {
           e.stopPropagation();
           uploadImageForm.handleSubmit();
         }}
-        className="flex flex-col gap-1 mt-4"
+        className="mt-4 flex flex-col gap-1"
       >
         <uploadImageForm.Field name="file">
           {(field) => (
@@ -71,15 +71,13 @@ export function ChangeProfilePictureForm() {
             />
           )}
         </uploadImageForm.Field>
-        <uploadImageForm.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-        >
+        <uploadImageForm.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Button
               type="submit"
               disabled={!canSubmit}
               size={'lg'}
-              className="mt-2 font-bold self-end"
+              className="mt-2 self-end font-bold"
             >
               {isSubmitting ? (
                 <>

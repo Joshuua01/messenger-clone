@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { useEffect, useState } from 'react';
 
 interface FormFieldProps {
   field: any;
@@ -59,7 +59,7 @@ export function FormField({
             }}
             className="cursor-pointer"
           />
-          <Avatar className="w-10 h-10">
+          <Avatar className="h-10 w-10">
             <AvatarImage src={previewUrl ?? currentImage} />
           </Avatar>
         </div>
@@ -76,12 +76,10 @@ export function FormField({
         />
       )}
 
-      <div className="text-destructive text-sm min-h-5">
-        {field.state.meta.errors.map(
-          (err: string | { message?: string }, i: number) => (
-            <div key={i}>{typeof err === 'string' ? err : err?.message}</div>
-          ),
-        )}
+      <div className="text-destructive min-h-5 text-sm">
+        {field.state.meta.errors.map((err: string | { message?: string }, i: number) => (
+          <div key={i}>{typeof err === 'string' ? err : err?.message}</div>
+        ))}
       </div>
     </div>
   );

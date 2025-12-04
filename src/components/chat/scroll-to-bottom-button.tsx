@@ -10,8 +10,8 @@ export function ScrollToButtomButton({ isAtBottom, scrollRef }: ScrollToButtomBu
   return (
     <div
       className={cn(
-        'absolute bottom-0 left-1/2 transform -translate-x-1/2 transition-all duration-300 ease-in-out p-2 rounded-full bg-muted-foreground/30 cursor-pointer',
-        isAtBottom ? 'opacity-0 translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0',
+        'bg-muted-foreground/30 absolute bottom-0 left-1/2 -translate-x-1/2 transform cursor-pointer rounded-full p-2 transition-all duration-300 ease-in-out',
+        isAtBottom ? 'pointer-events-none translate-y-4 opacity-0' : 'translate-y-0 opacity-100',
       )}
       onClick={() => {
         scrollRef.current?.scrollIntoView({ behavior: 'smooth' });

@@ -1,5 +1,5 @@
-import { cn, formatTime, getInitials } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn, formatTime, getInitials } from '@/lib/utils';
 
 interface MessageBubbleProps {
   content: string;
@@ -19,26 +19,24 @@ export const MessageBubble = ({
   return (
     <div
       className={cn(
-        'grid gap-x-2 gap-y-1 max-w-[65%]',
-        isOwn ? 'self-end grid-cols-1' : 'self-start grid-cols-[auto_1fr]',
+        'grid max-w-[65%] gap-x-2 gap-y-1',
+        isOwn ? 'grid-cols-1 self-end' : 'grid-cols-[auto_1fr] self-start',
       )}
     >
       {!isOwn && senderName && <div />}
       {!isOwn && senderName && (
-        <span className="text-xs text-muted-foreground px-1">{senderName}</span>
+        <span className="text-muted-foreground px-1 text-xs">{senderName}</span>
       )}
 
       {!isOwn && senderName && (
         <Avatar className="h-10 w-10 shrink-0 self-end">
           <AvatarImage src={senderImage || undefined} alt={senderName} />
-          <AvatarFallback className="text-xs">
-            {getInitials(senderName)}
-          </AvatarFallback>
+          <AvatarFallback className="text-xs">{getInitials(senderName)}</AvatarFallback>
         </Avatar>
       )}
       <div
         className={cn(
-          'px-3 py-2 rounded-lg wrap-break-word max-w-full w-fit',
+          'w-fit max-w-full rounded-lg px-3 py-2 wrap-break-word',
           isOwn
             ? 'bg-primary text-primary-foreground justify-self-end'
             : 'bg-muted text-foreground justify-self-start',
@@ -49,10 +47,7 @@ export const MessageBubble = ({
 
       {!isOwn && senderName && <div />}
       <span
-        className={cn(
-          'text-xs text-muted-foreground px-1',
-          isOwn ? 'text-right' : 'text-left',
-        )}
+        className={cn('text-muted-foreground px-1 text-xs', isOwn ? 'text-right' : 'text-left')}
       >
         {formatTime(timestamp)}
       </span>
