@@ -19,31 +19,34 @@ const defaultValues: RegisterForm = {
 };
 
 function RouteComponent() {
-  const navigation = useNavigate();
+  const navigate = useNavigate();
+
+  const handleRegister = async (values: { value: RegisterForm }) => {
+    const { email, password, name } = values.value;
+    await authClient.signUp.email(
+      {
+        email,
+        password,
+        name,
+      },
+      {
+        onSuccess: () => {
+          toast.success('User registered successfully!');
+          navigate({ to: '/' });
+        },
+        onError: (ctx) => {
+          toast.error(ctx.error.message);
+        },
+      },
+    );
+  };
+
   const form = useForm({
     defaultValues,
     validators: {
       onSubmit: registerSchema,
     },
-    onSubmit: async (values) => {
-      const { email, password, name } = values.value;
-      await authClient.signUp.email(
-        {
-          email: email,
-          password: password,
-          name: name,
-        },
-        {
-          onSuccess: () => {
-            toast.success('User registered successfully!');
-            navigation({ to: '/' });
-          },
-          onError: (ctx) => {
-            toast.error(ctx.error.message);
-          },
-        },
-      );
-    },
+    onSubmit: handleRegister,
   });
 
   return (
@@ -112,7 +115,7 @@ function RouteComponent() {
             <Button type="submit" disabled={!canSubmit} size={'lg'} className="mt-2 font-bold">
               {isSubmitting ? (
                 <>
-                  <Spinner /> Creating...{' '}
+                  <Spinner /> Creating...
                 </>
               ) : (
                 'Create an account'
@@ -123,7 +126,7 @@ function RouteComponent() {
       </form>
       <div className="text-sm">
         Already have an account?{' '}
-        <Link to="/login" className="hover font-bold underline underline-offset-2">
+        <Link to="/login" className="font-bold underline underline-offset-2 hover:opacity-80">
           Log in here
         </Link>
       </div>

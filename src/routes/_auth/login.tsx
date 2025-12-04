@@ -17,30 +17,33 @@ const defaultValues: LoginForm = {
 };
 
 function RouteComponent() {
-  const navigation = useNavigate();
+  const navigate = useNavigate();
+
+  const handleLogin = async (values: { value: LoginForm }) => {
+    const { email, password } = values.value;
+    await authClient.signIn.email(
+      {
+        email,
+        password,
+      },
+      {
+        onSuccess: () => {
+          toast.success('User logged in successfully!');
+          navigate({ to: '/' });
+        },
+        onError: (ctx) => {
+          toast.error(ctx.error.message);
+        },
+      },
+    );
+  };
+
   const form = useForm({
     defaultValues,
     validators: {
       onSubmit: loginSchema,
     },
-    onSubmit: async (values) => {
-      const { email, password } = values.value;
-      await authClient.signIn.email(
-        {
-          email: email,
-          password: password,
-        },
-        {
-          onSuccess: () => {
-            toast.success('User logged in successfully!');
-            navigation({ to: '/' });
-          },
-          onError: (ctx) => {
-            toast.error(ctx.error.message);
-          },
-        },
-      );
-    },
+    onSubmit: handleLogin,
   });
 
   return (
@@ -75,7 +78,7 @@ function RouteComponent() {
               label="Password"
               type="password"
               placeholder="Enter your password..."
-              autoComplete="new-password"
+              autoComplete="current-password"
             />
           )}
         </form.Field>
@@ -85,7 +88,7 @@ function RouteComponent() {
             <Button type="submit" disabled={!canSubmit} size={'lg'} className="mt-2 font-bold">
               {isSubmitting ? (
                 <>
-                  <Spinner /> Logging in...{' '}
+                  <Spinner /> Logging in...
                 </>
               ) : (
                 'Log in'
