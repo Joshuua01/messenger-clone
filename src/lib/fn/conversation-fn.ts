@@ -43,7 +43,7 @@ export const createPrivateConversationFn = createServerFn()
     return newConversation.id;
   });
 
-export const getCurrentUserConversationsFn = createServerFn()
+export const getCurrentUserChatsFn = createServerFn()
   .middleware([withAuth])
   .inputValidator(
     z.object({
@@ -57,7 +57,7 @@ export const getCurrentUserConversationsFn = createServerFn()
 
     const chats = await db
       .select({
-        conversationId: conversation.id,
+        id: conversation.id,
         lastMessage: conversation.lastMessage,
         updatedAt: conversation.updatedAt,
         otherUserId: user.id,
@@ -99,8 +99,8 @@ export const getCurrentUserConversationsFn = createServerFn()
     const conversations = hasMore ? chats.slice(0, limit) : chats;
 
     return {
-      conversations,
-      nextCursor: hasMore ? conversations[conversations.length - 1].conversationId : undefined,
+      chats: conversations,
+      nextCursor: hasMore ? conversations[conversations.length - 1].id : undefined,
     };
   });
 
