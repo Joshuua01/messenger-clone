@@ -3,6 +3,7 @@ import { createServerFn } from '@tanstack/react-start';
 import z from 'zod';
 import { withAuth } from '../middleware/auth-middleware';
 import { s3 } from '../s3';
+import { randomUUID } from 'crypto';
 
 export const uploadImageFn = createServerFn({ method: 'POST' })
   .middleware([withAuth])
@@ -15,12 +16,23 @@ export const uploadImageFn = createServerFn({ method: 'POST' })
       throw new Error('No file provided');
     }
 
+    const MAX_SIZE = 5 * 1024 * 1024;
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      throw new Error('Invalid file type. Allowed: JPEG, PNG, WebP, GIF');
+    }
+
+    if (file.size > MAX_SIZE) {
+      throw new Error('File too large. Maximum size is 5MB');
+    }
+
     if (currentImage) {
       await deleteImageFn({ data: { imageUrl: currentImage } });
     }
 
     const arrayBuffer = await file.arrayBuffer();
-    const fileName = `${Date.now()}-${file.name}`;
+    const fileName = `${randomUUID()}-${file.name}`;
 
     const upload = await s3.send(
       new PutObjectCommand({

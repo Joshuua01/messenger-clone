@@ -192,7 +192,7 @@ export const sendMessageFn = createServerFn()
   )
   .handler(async ({ data }): Promise<MessageWithSender> => {
     return await db.transaction(async (tx) => {
-      const [newMesssage] = await tx
+      const [newMessage] = await tx
         .insert(message)
         .values({
           chatId: data.chatId,
@@ -215,7 +215,7 @@ export const sendMessageFn = createServerFn()
         })
         .from(message)
         .innerJoin(user, eq(message.senderId, user.id))
-        .where(eq(message.id, newMesssage.id));
+        .where(eq(message.id, newMessage.id));
 
       return messageWithUser;
     });
