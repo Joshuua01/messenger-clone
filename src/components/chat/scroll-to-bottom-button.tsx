@@ -6,7 +6,7 @@ interface ScrollToButtomButtonProps {
   scrollRef: React.RefObject<HTMLDivElement | null>;
 }
 
-export function ScrollToButtomButton({ isAtBottom, scrollRef }: ScrollToButtomButtonProps) {
+export function ScrollToBottomButton({ isAtBottom, scrollRef }: ScrollToButtomButtonProps) {
   return (
     <div
       className={cn(

@@ -1,7 +1,7 @@
 import { ChatHeader } from '@/components/chat/chat-header';
 import { MessageInput } from '@/components/chat/message-input';
 import { MessageList } from '@/components/chat/message-list';
-import { ScrollToButtomButton } from '@/components/chat/scroll-to-bottom-button';
+import { ScrollToBottomButton } from '@/components/chat/scroll-to-bottom-button';
 import { TypingIndicator } from '@/components/chat/typing-indicator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useChatSocket } from '@/hooks/use-chat-socket';
@@ -88,7 +88,7 @@ function RouteComponent() {
             <MessageList messages={messages} isLoading={isLoading} currentUserId={currentUserId} />
             {isTyping && <TypingIndicator />}
             <div ref={scrollRef} />
-            <ScrollToButtomButton isAtBottom={isAtBottom} scrollRef={scrollRef} />
+            <ScrollToBottomButton isAtBottom={isAtBottom} scrollRef={scrollRef} />
           </div>
         </ScrollArea>
         <MessageInput onSend={sendMessage} onTyping={emitTyping} />
