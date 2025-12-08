@@ -15,7 +15,7 @@ export function useUserSocket(userId: string | undefined) {
     }
 
     socket.emit('join_user_room', userId);
-    socket.on('conversation_updated', () => {
+    socket.on('chat_updated', () => {
       router.invalidate({
         filter: (route) => route.routeId === '/_dashboard/chat',
       });
@@ -23,7 +23,7 @@ export function useUserSocket(userId: string | undefined) {
 
     return () => {
       socket.emit('leave_user_room', userId);
-      socket.off('conversation_updated');
+      socket.off('chat_updated');
     };
   }, [userId]);
 }

@@ -1,4 +1,4 @@
-import { getMessagesForConversationFn } from '@/lib/fn/conversation-fn';
+import { getMessagesForChatFn } from '@/lib/fn/chat-fn';
 import { MessageWithSender } from '@/lib/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -6,13 +6,13 @@ import { toast } from 'sonner';
 interface UsePaginatedMessagesOptions {
   initialMessages: MessageWithSender[];
   initialCursor: string | undefined;
-  conversationId: string;
+  chatId: string;
 }
 
 export function usePaginatedMessages({
   initialMessages,
   initialCursor,
-  conversationId,
+  chatId,
 }: UsePaginatedMessagesOptions) {
   const [messages, setMessages] = useState(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +27,7 @@ export function usePaginatedMessages({
     hasMoreRef.current = !!initialCursor;
     isLoadingRef.current = false;
     setIsLoading(false);
-  }, [conversationId, initialMessages, initialCursor]);
+  }, [chatId, initialMessages, initialCursor]);
 
   const loadMore = useCallback(async () => {
     if (!hasMoreRef.current || isLoadingRef.current || !cursorRef.current) return;
@@ -35,8 +35,8 @@ export function usePaginatedMessages({
     try {
       isLoadingRef.current = true;
       setIsLoading(true);
-      const { messages: olderMessages, nextCursor } = await getMessagesForConversationFn({
-        data: { conversationId, cursor: cursorRef.current },
+      const { messages: olderMessages, nextCursor } = await getMessagesForChatFn({
+        data: { chatId, cursor: cursorRef.current },
       });
       setMessages((prev) => [...olderMessages, ...prev]);
       cursorRef.current = nextCursor;
@@ -47,7 +47,7 @@ export function usePaginatedMessages({
       isLoadingRef.current = false;
       setIsLoading(false);
     }
-  }, [conversationId]);
+  }, [chatId]);
 
   const addMessage = useCallback((message: MessageWithSender) => {
     setMessages((prev) => [...prev, message]);

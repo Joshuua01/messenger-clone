@@ -39,7 +39,7 @@ export function MessageList({ isLoading, messages, currentUserId }: MessageListP
         ))
       ) : (
         <div className="text-muted-foreground mt-10 flex h-full items-center justify-center font-semibold">
-          No messages yet. Start the conversation!
+          No messages yet. Start the chat!
         </div>
       )}
     </>

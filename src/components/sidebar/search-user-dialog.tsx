@@ -1,5 +1,5 @@
 import { useSession } from '@/lib/auth-client';
-import { createPrivateConversationFn } from '@/lib/fn/conversation-fn';
+import { createPrivateChatFn } from '@/lib/fn/chat-fn';
 import { searchUserFn } from '@/lib/fn/user-fn';
 import { UserSelect } from '@/server/db/schema';
 import { useNavigate } from '@tanstack/react-router';
@@ -51,20 +51,20 @@ export function SearchUserDialog() {
     }
   };
 
-  const handleConversationCreate = async (userId: string, currentUserId: string) => {
+  const handleChatCreate = async (userId: string, currentUserId: string) => {
     try {
-      const result = await createPrivateConversationFn({
+      const result = await createPrivateChatFn({
         data: {
           participantIds: [userId, currentUserId],
         },
       });
-      toast.success('Conversation created successfully');
+      toast.success('Chat created successfully');
       setOpen(false);
       setSearch('');
       setUsers([]);
       navigate({ to: `/chat/${result}` });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to create conversation.');
+      toast.error(error instanceof Error ? error.message : 'Failed to create chat.');
     }
   };
 
@@ -86,7 +86,7 @@ export function SearchUserDialog() {
                 <CommandItem
                   key={user.id}
                   value={user.name}
-                  onSelect={() => handleConversationCreate(user.id, session.data!.user!.id)}
+                  onSelect={() => handleChatCreate(user.id, session.data!.user!.id)}
                   className="cursor-pointer"
                 >
                   <Avatar>

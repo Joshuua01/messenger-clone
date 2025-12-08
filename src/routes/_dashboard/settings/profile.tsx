@@ -15,7 +15,7 @@ export const Route = createFileRoute('/_dashboard/settings/profile')({
 });
 
 function RouteComponent() {
-  const navigation = useNavigate();
+  const navigate = useNavigate();
 
   const handleUserDeletion = async () => {
     await authClient.deleteUser(
@@ -23,7 +23,7 @@ function RouteComponent() {
       {
         onSuccess: () => {
           toast.success('Account deleted successfully!');
-          navigation({ to: '/' });
+          navigate({ to: '/' });
         },
         onError: (ctx) => {
           toast.error(ctx.error.message);

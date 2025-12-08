@@ -1,23 +1,23 @@
 import { db } from '@/server/db';
-import { conversation, message, privateConversation, user } from '@/server/db/schema';
+import { chat, message, privateChat, user } from '@/server/db/schema';
 import { createServerFn } from '@tanstack/react-start';
 import { and, desc, eq, isNotNull, lt, or } from 'drizzle-orm';
 import z from 'zod';
 import { withAuth } from '../middleware/auth-middleware';
 import { MessageWithSender } from '../types';
 
-const conversationFnSchema = z.object({
+const chatFnSchema = z.object({
   participantIds: z.array(z.string()).length(2),
 });
 
-export const createPrivateConversationFn = createServerFn()
-  .inputValidator(conversationFnSchema)
+export const createPrivateChatFn = createServerFn()
+  .inputValidator(chatFnSchema)
   .middleware([withAuth])
   .handler(async ({ data }) => {
     const { participantIds } = data;
     const [userA, userB] = participantIds.sort();
 
-    const existingPrivate = await db.query.privateConversation.findFirst({
+    const existingPrivate = await db.query.privateChat.findFirst({
       where: (p) =>
         or(
           and(eq(p.userAId, userA), eq(p.userBId, userB)),
@@ -26,21 +26,18 @@ export const createPrivateConversationFn = createServerFn()
     });
 
     if (existingPrivate) {
-      return existingPrivate.conversationId;
+      return existingPrivate.chatId;
     }
 
-    const [newConversation] = await db
-      .insert(conversation)
-      .values({ type: 'private' })
-      .returning({ id: conversation.id });
+    const [newChat] = await db.insert(chat).values({ type: 'private' }).returning({ id: chat.id });
 
-    await db.insert(privateConversation).values({
-      conversationId: newConversation.id,
+    await db.insert(privateChat).values({
+      chatId: newChat.id,
       userAId: userA,
       userBId: userB,
     });
 
-    return newConversation.id;
+    return newChat.id;
   });
 
 export const getCurrentUserChatsFn = createServerFn()
@@ -57,50 +54,50 @@ export const getCurrentUserChatsFn = createServerFn()
 
     const chats = await db
       .select({
-        id: conversation.id,
-        lastMessage: conversation.lastMessage,
-        updatedAt: conversation.updatedAt,
+        id: chat.id,
+        lastMessage: chat.lastMessage,
+        updatedAt: chat.updatedAt,
         otherUserId: user.id,
         otherUserName: user.name,
         otherUserImage: user.image,
       })
-      .from(conversation)
-      .innerJoin(privateConversation, eq(conversation.id, privateConversation.conversationId))
+      .from(chat)
+      .innerJoin(privateChat, eq(chat.id, privateChat.chatId))
       .innerJoin(
         user,
         or(
-          and(eq(privateConversation.userAId, user.id), eq(privateConversation.userBId, userId)),
-          and(eq(privateConversation.userBId, user.id), eq(privateConversation.userAId, userId)),
+          and(eq(privateChat.userAId, user.id), eq(privateChat.userBId, userId)),
+          and(eq(privateChat.userBId, user.id), eq(privateChat.userAId, userId)),
         ),
       )
       .where(
         cursor
           ? and(
-              or(eq(privateConversation.userAId, userId), eq(privateConversation.userBId, userId)),
-              isNotNull(conversation.lastMessage),
+              or(eq(privateChat.userAId, userId), eq(privateChat.userBId, userId)),
+              isNotNull(chat.lastMessage),
               lt(
-                conversation.updatedAt,
+                chat.updatedAt,
                 db
-                  .select({ updatedAt: conversation.updatedAt })
-                  .from(conversation)
-                  .where(eq(conversation.id, cursor))
+                  .select({ updatedAt: chat.updatedAt })
+                  .from(chat)
+                  .where(eq(chat.id, cursor))
                   .limit(1),
               ),
             )
           : and(
-              or(eq(privateConversation.userAId, userId), eq(privateConversation.userBId, userId)),
-              isNotNull(conversation.lastMessage),
+              or(eq(privateChat.userAId, userId), eq(privateChat.userBId, userId)),
+              isNotNull(chat.lastMessage),
             ),
       )
-      .orderBy(desc(conversation.updatedAt))
+      .orderBy(desc(chat.updatedAt))
       .limit(limit + 1);
 
     const hasMore = chats.length > limit;
-    const conversations = hasMore ? chats.slice(0, limit) : chats;
+    const chatsSlice = hasMore ? chats.slice(0, limit) : chats;
 
     return {
-      chats: conversations,
-      nextCursor: hasMore ? conversations[conversations.length - 1].id : undefined,
+      chats: chatsSlice,
+      nextCursor: hasMore ? chatsSlice[chatsSlice.length - 1].id : undefined,
     };
   });
 
@@ -108,52 +105,46 @@ export const getOtherUserInfoFn = createServerFn()
   .inputValidator(z.string())
   .middleware([withAuth])
   .handler(async ({ data, context }) => {
-    const conversationId = data;
+    const chatId = data;
     const { id: currentUserId } = context.user;
 
-    const conversationInfo = await db
+    const otherUserInfo = await db
       .select({
         otherUserId: user.id,
         otherUserName: user.name,
         otherUserImage: user.image,
       })
-      .from(conversation)
-      .innerJoin(privateConversation, eq(conversation.id, privateConversation.conversationId))
+      .from(chat)
+      .innerJoin(privateChat, eq(chat.id, privateChat.chatId))
       .innerJoin(
         user,
         or(
-          and(
-            eq(privateConversation.userAId, user.id),
-            eq(privateConversation.userBId, currentUserId),
-          ),
-          and(
-            eq(privateConversation.userBId, user.id),
-            eq(privateConversation.userAId, currentUserId),
-          ),
+          and(eq(privateChat.userAId, user.id), eq(privateChat.userBId, currentUserId)),
+          and(eq(privateChat.userBId, user.id), eq(privateChat.userAId, currentUserId)),
         ),
       )
-      .where(eq(conversation.id, conversationId))
+      .where(eq(chat.id, chatId))
       .limit(1);
 
-    return conversationInfo[0];
+    return otherUserInfo[0];
   });
 
-export const getMessagesForConversationFn = createServerFn()
+export const getMessagesForChatFn = createServerFn()
   .inputValidator(
     z.object({
-      conversationId: z.string(),
+      chatId: z.string(),
       cursor: z.string().optional(),
       limit: z.number().default(10),
     }),
   )
   .middleware([withAuth])
   .handler(async ({ data }): Promise<{ messages: MessageWithSender[]; nextCursor?: string }> => {
-    const { conversationId, cursor, limit } = data;
+    const { chatId, cursor, limit } = data;
 
     const messages = await db
       .select({
         messageId: message.id,
-        conversationId: message.conversationId,
+        chatId: message.chatId,
         content: message.content,
         createdAt: message.createdAt,
         senderId: user.id,
@@ -165,7 +156,7 @@ export const getMessagesForConversationFn = createServerFn()
       .where(
         cursor
           ? and(
-              eq(message.conversationId, conversationId),
+              eq(message.chatId, chatId),
               lt(
                 message.createdAt,
                 db
@@ -175,7 +166,7 @@ export const getMessagesForConversationFn = createServerFn()
                   .limit(1),
               ),
             )
-          : eq(message.conversationId, conversationId),
+          : eq(message.chatId, chatId),
       )
       .orderBy(desc(message.createdAt))
       .limit(limit + 1);
@@ -194,7 +185,7 @@ export const sendMessageFn = createServerFn()
   .middleware([withAuth])
   .inputValidator(
     z.object({
-      conversationId: z.string(),
+      chatId: z.string(),
       senderId: z.string(),
       content: z.string(),
     }),
@@ -204,21 +195,18 @@ export const sendMessageFn = createServerFn()
       const [newMesssage] = await tx
         .insert(message)
         .values({
-          conversationId: data.conversationId,
+          chatId: data.chatId,
           senderId: data.senderId,
           content: data.content,
         })
         .returning();
 
-      await tx
-        .update(conversation)
-        .set({ lastMessage: data.content })
-        .where(eq(conversation.id, data.conversationId));
+      await tx.update(chat).set({ lastMessage: data.content }).where(eq(chat.id, data.chatId));
 
       const [messageWithUser] = await tx
         .select({
           messageId: message.id,
-          conversationId: message.conversationId,
+          chatId: message.chatId,
           content: message.content,
           createdAt: message.createdAt,
           senderId: user.id,
@@ -233,19 +221,16 @@ export const sendMessageFn = createServerFn()
     });
   });
 
-export const getConversationParticipants = createServerFn()
+export const getChatParticipantsFn = createServerFn()
   .inputValidator(z.string())
   .middleware([withAuth])
   .handler(async ({ data }) => {
-    const conversationId = data;
+    const chatId = data;
 
-    const [conversation] = await db
-      .select()
-      .from(privateConversation)
-      .where(eq(privateConversation.conversationId, conversationId));
+    const [chat] = await db.select().from(privateChat).where(eq(privateChat.chatId, chatId));
 
-    if (conversation) {
-      const participants = [conversation.userAId, conversation.userBId];
+    if (chat) {
+      const participants = [chat.userAId, chat.userBId];
       return participants;
     }
 

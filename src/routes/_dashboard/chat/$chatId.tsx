@@ -10,7 +10,7 @@ import { usePresence } from '@/hooks/use-presence';
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import { useSendMessage } from '@/hooks/use-send-message';
 import { getSessionFn } from '@/lib/fn/auth-fn';
-import { getMessagesForConversationFn, getOtherUserInfoFn } from '@/lib/fn/conversation-fn';
+import { getMessagesForChatFn, getOtherUserInfoFn } from '@/lib/fn/chat-fn';
 import { createFileRoute } from '@tanstack/react-router';
 import React, { useEffect, useLayoutEffect } from 'react';
 
@@ -19,7 +19,7 @@ export const Route = createFileRoute('/_dashboard/chat/$chatId')({
   loader: async ({ params }) => {
     const { chatId } = params;
     const [chatData, currentSession, otherUserInfo] = await Promise.all([
-      getMessagesForConversationFn({ data: { conversationId: chatId } }),
+      getMessagesForChatFn({ data: { chatId } }),
       getSessionFn(),
       getOtherUserInfoFn({ data: chatId }),
     ]);
@@ -34,7 +34,7 @@ export const Route = createFileRoute('/_dashboard/chat/$chatId')({
 });
 
 function RouteComponent() {
-  const { chatId: conversationId } = Route.useParams();
+  const { chatId } = Route.useParams();
   const { chatMessages, initialCursor, currentUserId, otherUserInfo } = Route.useLoaderData();
 
   const { scrollRef, isAtBottom, scrollToBottom, checkScrollPosition } = useScrollToBottom();
@@ -42,10 +42,10 @@ function RouteComponent() {
   const { addMessage, hasMore, isLoading, loadMore, messages } = usePaginatedMessages({
     initialMessages: chatMessages,
     initialCursor,
-    conversationId,
+    chatId,
   });
 
-  const { isTyping, emitTyping } = useChatSocket(conversationId, currentUserId!, (message) => {
+  const { isTyping, emitTyping } = useChatSocket(chatId, currentUserId!, (message) => {
     addMessage(message);
     scrollToBottom('smooth');
   });
@@ -54,14 +54,14 @@ function RouteComponent() {
 
   useLayoutEffect(() => {
     scrollToBottom();
-  }, [conversationId, scrollToBottom]);
+  }, [chatId, scrollToBottom]);
 
   useEffect(() => {
     if (isTyping && isAtBottom) scrollToBottom('smooth');
   }, [isTyping, isAtBottom, scrollToBottom]);
 
   const sendMessage = useSendMessage({
-    conversationId,
+    chatId,
     currentUserId: currentUserId,
     otherUserId: otherUserInfo.otherUserId,
   });
@@ -83,11 +83,7 @@ function RouteComponent() {
           userName={otherUserInfo.otherUserName}
           imageUrl={otherUserInfo.otherUserImage}
         />
-        <ScrollArea
-          className="min-h-0 flex-1 px-6 py-1"
-          onScroll={handleScroll}
-          key={conversationId}
-        >
+        <ScrollArea className="min-h-0 flex-1 px-6 py-1" onScroll={handleScroll} key={chatId}>
           <div className="flex flex-col gap-3">
             <MessageList messages={messages} isLoading={isLoading} currentUserId={currentUserId} />
             {isTyping && <TypingIndicator />}

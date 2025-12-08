@@ -8,7 +8,7 @@ import { Button } from '../ui/button';
 import { Spinner } from '../ui/spinner';
 
 export function ChangePasswordForm() {
-  const navigation = useNavigate();
+  const navigate = useNavigate();
   const changePasswordForm = useForm({
     defaultValues: {
       oldPassword: '',
@@ -29,7 +29,7 @@ export function ChangePasswordForm() {
         {
           onSuccess: () => {
             toast.success('Password changed successfully!');
-            navigation({ to: '/' });
+            navigate({ to: '/' });
           },
           onError: (ctx) => {
             toast.error(ctx.error.message);

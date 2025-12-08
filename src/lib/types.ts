@@ -1,6 +1,6 @@
 export type MessageWithSender = {
   messageId: string;
-  conversationId: string;
+  chatId: string;
   content: string;
   createdAt: Date;
   senderId: string;

@@ -31,16 +31,16 @@ const markOffline = (userId: string, socketId: string) => {
 };
 
 io.on('connection', (socket) => {
-  socket.on('join_chat', (conversationId: string) => {
-    socket.join(`chat:${conversationId}`);
+  socket.on('join_chat', (chatId: string) => {
+    socket.join(`chat:${chatId}`);
   });
 
-  socket.on('leave_chat', (conversationId: string) => {
-    socket.leave(`chat:${conversationId}`);
+  socket.on('leave_chat', (chatId: string) => {
+    socket.leave(`chat:${chatId}`);
   });
 
   socket.on('send_message', (message: MessageWithSender) => {
-    io.to(`chat:${message.conversationId}`).emit('new_message', message);
+    io.to(`chat:${message.chatId}`).emit('new_message', message);
   });
 
   socket.on('join_user_room', (userId: string) => {
@@ -68,16 +68,16 @@ io.on('connection', (socket) => {
 
   socket.on('notify_chat', (participantsId: string[]) => {
     for (const userId of participantsId) {
-      io.to(`user:${userId}`).emit('conversation_updated');
+      io.to(`user:${userId}`).emit('chat_updated');
     }
   });
 
-  socket.on('typing', (conversationId: string, userId: string) => {
-    socket.to(`chat:${conversationId}`).emit('user_typing', userId);
+  socket.on('typing', (chatId: string, userId: string) => {
+    socket.to(`chat:${chatId}`).emit('user_typing', userId);
   });
 
-  socket.on('stop_typing', (conversationId: string, userId: string) => {
-    socket.to(`chat:${conversationId}`).emit('user_stop_typing', userId);
+  socket.on('stop_typing', (chatId: string, userId: string) => {
+    socket.to(`chat:${chatId}`).emit('user_stop_typing', userId);
   });
 
   socket.on('disconnect', () => {

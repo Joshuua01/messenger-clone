@@ -1,4 +1,4 @@
-import { getCurrentUserChatsFn } from '@/lib/fn/conversation-fn';
+import { getCurrentUserChatsFn } from '@/lib/fn/chat-fn';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -43,7 +43,7 @@ export function usePaginatedChats({ initialChats, initialCursor }: UsePaginatedC
       cursorRef.current = nextCursor;
       hasMoreRef.current = !!nextCursor;
     } catch {
-      toast.error('Failed to load more conversations. Please try again.');
+      toast.error('Failed to load more chats. Please try again.');
     } finally {
       setIsLoading(false);
       isLoadingRef.current = false;

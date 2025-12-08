@@ -3,7 +3,7 @@ import { socket } from '@/lib/socket';
 import type { MessageWithSender } from '@/lib/types';
 
 export function useChatSocket(
-  conversationId: string,
+  chatId: string,
   currentUserId: string,
   onMessage: (message: MessageWithSender) => void,
 ) {
@@ -13,7 +13,7 @@ export function useChatSocket(
   const isEmittingTypingRef = useRef<boolean>(false);
 
   useEffect(() => {
-    if (!conversationId || !currentUserId) {
+    if (!chatId || !currentUserId) {
       return;
     }
 
@@ -35,27 +35,27 @@ export function useChatSocket(
       setIsTyping(typingUsersRef.current.size > 0);
     };
 
-    socket.emit('join_chat', conversationId);
+    socket.emit('join_chat', chatId);
     socket.on('new_message', handleIncomingMessage);
     socket.on('user_typing', handleUserTyping);
     socket.on('user_stop_typing', handleUserStopTyping);
 
     return () => {
-      socket.emit('leave_chat', conversationId);
+      socket.emit('leave_chat', chatId);
       socket.off('new_message', handleIncomingMessage);
       socket.off('user_typing', handleUserTyping);
       socket.off('user_stop_typing', handleUserStopTyping);
     };
-  }, [conversationId, currentUserId]);
+  }, [chatId, currentUserId]);
 
   const emitTyping = () => {
     if (!isEmittingTypingRef.current) {
-      socket.emit('typing', conversationId, currentUserId);
+      socket.emit('typing', chatId, currentUserId);
       isEmittingTypingRef.current = true;
     }
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit('stop_typing', conversationId, currentUserId);
+      socket.emit('stop_typing', chatId, currentUserId);
       isEmittingTypingRef.current = false;
     }, 2000);
   };

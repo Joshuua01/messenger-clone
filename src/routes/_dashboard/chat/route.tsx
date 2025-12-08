@@ -1,4 +1,4 @@
-import { ConversationItem } from '@/components/chat/conversation-item';
+import { ChatItem } from '@/components/chat/chat-item';
 import { SidebarSection } from '@/components/sidebar/sidebar-section';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
@@ -6,7 +6,7 @@ import { usePaginatedChats } from '@/hooks/use-paginated-chats';
 import { usePresence } from '@/hooks/use-presence';
 import { useUserSocket } from '@/hooks/use-user-socket';
 import { getSessionFn } from '@/lib/fn/auth-fn';
-import { getCurrentUserChatsFn } from '@/lib/fn/conversation-fn';
+import { getCurrentUserChatsFn } from '@/lib/fn/chat-fn';
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 import { useMemo } from 'react';
 
@@ -56,19 +56,12 @@ function RouteComponent() {
   return (
     <div className="flex h-full flex-1 gap-2">
       <div className="flex h-full w-96 shrink-0 flex-col">
-        <SidebarSection
-          title="Recent Chats"
-          description="View and manage your recent conversations."
-        >
+        <SidebarSection title="Recent Chats" description="View and manage your recent chats.">
           <ScrollArea className="h-full" onScroll={handleScroll}>
             {chats.length > 0 ? (
               <>
                 {chats.map((chat) => (
-                  <ConversationItem
-                    conversation={chat}
-                    isOnline={presence[chat.otherUserId]}
-                    key={chat.id}
-                  />
+                  <ChatItem chat={chat} isOnline={presence[chat.otherUserId]} key={chat.id} />
                 ))}
                 {isLoading && (
                   <div className="flex justify-center py-4">
@@ -78,7 +71,7 @@ function RouteComponent() {
               </>
             ) : (
               <div className="text-muted-foreground flex items-center justify-center py-8 text-sm">
-                No conversations found. Start a new chat!
+                No chats found. Start a new chat!
               </div>
             )}
           </ScrollArea>
