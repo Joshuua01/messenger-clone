@@ -1,4 +1,5 @@
 import { sendMessageFn } from '@/lib/fn/chat-fn';
+import { uploadMessageAttachmentFn } from '@/lib/fn/upload-fn';
 import { socket } from '@/lib/socket';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
@@ -10,7 +11,7 @@ interface UseSendMessageOptions {
 }
 
 export function useSendMessage({ chatId, currentUserId, otherUserId }: UseSendMessageOptions) {
-  return useCallback(
+  const sendMessage = useCallback(
     async (content: string) => {
       if (!currentUserId) return;
       try {
@@ -30,4 +31,33 @@ export function useSendMessage({ chatId, currentUserId, otherUserId }: UseSendMe
     },
     [chatId, currentUserId, otherUserId],
   );
+
+  const sendAttachments = useCallback(
+    async (files: File[]) => {
+      if (!currentUserId) return;
+
+      try {
+        const formData = new FormData();
+        files.forEach((file) => formData.append('files', file));
+
+        const attachements = await uploadMessageAttachmentFn({ data: formData });
+        const savedMessage = await sendMessageFn({
+          data: {
+            chatId,
+            senderId: currentUserId,
+            content: null,
+            attachments: attachements,
+          },
+        });
+        socket.emit('send_message', savedMessage);
+        socket.emit('notify_chat', [currentUserId, otherUserId]);
+      } catch (error: any) {
+        toast.error(`Failed to upload attachments: ${error.message}`);
+        return;
+      }
+    },
+    [chatId, currentUserId, otherUserId],
+  );
+
+  return { sendMessage, sendAttachments };
 }

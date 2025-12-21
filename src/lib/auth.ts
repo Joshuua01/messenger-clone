@@ -3,7 +3,7 @@ import * as schema from '@/server/db/schema';
 import { APIError, betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { reactStartCookies } from 'better-auth/react-start';
-import { deleteImageFn } from './fn/upload-fn';
+import { deleteAvatarFn } from './fn/upload-fn';
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -23,7 +23,7 @@ export const auth = betterAuth({
       enabled: true,
       beforeDelete: async ({ image }) => {
         if (image) {
-          const result = await deleteImageFn({
+          const result = await deleteAvatarFn({
             data: { imageUrl: image },
           });
           if (!result.success) {

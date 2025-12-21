@@ -1,5 +1,5 @@
 import { authClient, useSession } from '@/lib/auth-client';
-import { uploadImageFn } from '@/lib/fn/upload-fn';
+import { uploadAvatarFn } from '@/lib/fn/upload-fn';
 import { useForm } from '@tanstack/react-form';
 import { toast } from 'sonner';
 import z from 'zod';
@@ -10,7 +10,7 @@ import { Spinner } from '../ui/spinner';
 export function ChangeProfilePictureForm() {
   const session = useSession();
 
-  const uploadImageForm = useForm({
+  const uploadAvatarForm = useForm({
     defaultValues: {
       file: null as File | null,
     },
@@ -27,7 +27,7 @@ export function ChangeProfilePictureForm() {
 
       let result;
       try {
-        result = await uploadImageFn({ data: formData });
+        result = await uploadAvatarFn({ data: formData });
       } catch (error: any) {
         toast.error(`Image upload failed: ${error.message}`);
         return;
@@ -56,11 +56,11 @@ export function ChangeProfilePictureForm() {
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          uploadImageForm.handleSubmit();
+          uploadAvatarForm.handleSubmit();
         }}
         className="mt-4 flex flex-col gap-1"
       >
-        <uploadImageForm.Field name="file">
+        <uploadAvatarForm.Field name="file">
           {(field) => (
             <FormField
               field={field}
@@ -70,8 +70,8 @@ export function ChangeProfilePictureForm() {
               currentImage={session.data?.user.image ?? undefined}
             />
           )}
-        </uploadImageForm.Field>
-        <uploadImageForm.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+        </uploadAvatarForm.Field>
+        <uploadAvatarForm.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Button
               type="submit"
@@ -88,7 +88,7 @@ export function ChangeProfilePictureForm() {
               )}
             </Button>
           )}
-        </uploadImageForm.Subscribe>
+        </uploadAvatarForm.Subscribe>
       </form>
     </div>
   );
