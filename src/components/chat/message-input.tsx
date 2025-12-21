@@ -2,6 +2,7 @@ import { ATTACHMENT_ALLOWED_TYPES, MAX_ATTACHMENT_SIZE } from '@/lib/fn/upload-f
 import { useForm } from '@tanstack/react-form';
 import { Paperclip } from 'lucide-react';
 import { useRef } from 'react';
+import { toast } from 'sonner';
 import z from 'zod';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -39,13 +40,22 @@ export function MessageInput({ onSend, onSendAttachments, onTyping }: MessageInp
           .min(1, 'No files selected')
           .refine(
             (files) => files.every((f) => ATTACHMENT_ALLOWED_TYPES.includes(f.type)),
-            'Invalid file type. Allowed: JPEG, PNG, GIF, WebP, PDF, TXT',
+            'Invalid file type. Allowed: JPEG, PNG, GIF, WebP, PDF, TXT, ZIP, TAR, RAR',
           )
           .refine(
             (files) => files.every((f) => f.size <= MAX_ATTACHMENT_SIZE),
             'File too large (max 15MB)',
           ),
       }),
+    },
+    onSubmitInvalid: ({ formApi }) => {
+      const errors = formApi.state.errors;
+      errors.forEach((errorRecord) => {
+        if (!errorRecord) return;
+        Object.values(errorRecord).forEach((issues) => {
+          issues.forEach((issue) => toast.error(issue.message));
+        });
+      });
     },
     onSubmit: async ({ value }) => {
       await onSendAttachments(value.files);
@@ -56,8 +66,10 @@ export function MessageInput({ onSend, onSendAttachments, onTyping }: MessageInp
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
     if (selectedFiles.length === 0) return;
+
     attachmentForm.setFieldValue('files', selectedFiles);
     attachmentForm.handleSubmit();
+    e.target.value = '';
   };
 
   return (
@@ -71,7 +83,7 @@ export function MessageInput({ onSend, onSendAttachments, onTyping }: MessageInp
         className="flex"
       >
         <attachmentForm.Field name="files">
-          {(field) => (
+          {() => (
             <Input
               type="file"
               ref={fileUploadRef}

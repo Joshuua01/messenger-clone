@@ -16,6 +16,14 @@ export const ATTACHMENT_ALLOWED_TYPES = [
   'image/gif',
   'application/pdf',
   'text/plain',
+  'application/zip',
+  'application/x-zip',
+  'application/x-zip-compressed',
+  'application/x-tar',
+  'application/x-gzip',
+  'application/gzip',
+  'application/x-rar-compressed',
+  'application/vnd.rar',
 ];
 
 export const uploadAvatarFn = createServerFn({ method: 'POST' })
