@@ -99,7 +99,18 @@ export const message = pgTable('message', {
   senderId: text('sender_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
-  content: text('content').notNull(),
+  content: text('content'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const messageAttachment = pgTable('message_attachment', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  messageId: uuid('message_id')
+    .notNull()
+    .references(() => message.id, { onDelete: 'cascade' }),
+  url: text('url').notNull(),
+  name: text('name').notNull(),
+  type: text('type').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

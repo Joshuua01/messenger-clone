@@ -58,7 +58,6 @@ export function SearchUserDialog() {
           participantIds: [userId, currentUserId],
         },
       });
-      toast.success('Chat created successfully');
       setOpen(false);
       setSearch('');
       setUsers([]);

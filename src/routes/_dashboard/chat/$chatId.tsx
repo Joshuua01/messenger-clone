@@ -60,7 +60,7 @@ function RouteComponent() {
     if (isTyping && isAtBottom) scrollToBottom('smooth');
   }, [isTyping, isAtBottom, scrollToBottom]);
 
-  const sendMessage = useSendMessage({
+  const { sendAttachments, sendMessage } = useSendMessage({
     chatId,
     currentUserId: currentUserId,
     otherUserId: otherUserInfo.otherUserId,
@@ -91,7 +91,11 @@ function RouteComponent() {
             <ScrollToBottomButton isAtBottom={isAtBottom} scrollRef={scrollRef} />
           </div>
         </ScrollArea>
-        <MessageInput onSend={sendMessage} onTyping={emitTyping} />
+        <MessageInput
+          onSend={sendMessage}
+          onSendAttachments={sendAttachments}
+          onTyping={emitTyping}
+        />
       </div>
     </div>
   );

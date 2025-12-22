@@ -1,7 +1,7 @@
 import { db } from '@/server/db';
-import { chat, message, privateChat, user } from '@/server/db/schema';
+import { chat, message, messageAttachment, privateChat, user } from '@/server/db/schema';
 import { createServerFn } from '@tanstack/react-start';
-import { and, desc, eq, isNotNull, lt, or } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, lt, or } from 'drizzle-orm';
 import z from 'zod';
 import { withAuth } from '../middleware/auth-middleware';
 import { MessageWithSender } from '../types';
@@ -175,8 +175,36 @@ export const getMessagesForChatFn = createServerFn()
     const paginatedMessages = hasMore ? messages.slice(0, limit) : messages;
     paginatedMessages.reverse();
 
+    const messageIds = paginatedMessages.map((msg) => msg.messageId);
+    const attachments =
+      messageIds.length > 0
+        ? await db
+            .select({
+              id: messageAttachment.id,
+              messageId: messageAttachment.messageId,
+              url: messageAttachment.url,
+              name: messageAttachment.name,
+              type: messageAttachment.type,
+            })
+            .from(messageAttachment)
+            .where(inArray(messageAttachment.messageId, messageIds))
+        : [];
+
+    const attachmentsByMessageId: Record<string, typeof attachments> = {};
+    attachments.forEach((attachment) => {
+      if (!attachmentsByMessageId[attachment.messageId]) {
+        attachmentsByMessageId[attachment.messageId] = [];
+      }
+      attachmentsByMessageId[attachment.messageId].push(attachment);
+    });
+
+    const messagesWithAttachments = paginatedMessages.map((msg) => ({
+      ...msg,
+      attachments: attachmentsByMessageId[msg.messageId] || [],
+    }));
+
     return {
-      messages: paginatedMessages,
+      messages: messagesWithAttachments,
       nextCursor: hasMore ? paginatedMessages[0].messageId : undefined,
     };
   });
@@ -187,7 +215,16 @@ export const sendMessageFn = createServerFn()
     z.object({
       chatId: z.string(),
       senderId: z.string(),
-      content: z.string(),
+      content: z.string().nullable(),
+      attachments: z
+        .array(
+          z.object({
+            url: z.string(),
+            name: z.string(),
+            type: z.string(),
+          }),
+        )
+        .optional(),
     }),
   )
   .handler(async ({ data }): Promise<MessageWithSender> => {
@@ -201,7 +238,24 @@ export const sendMessageFn = createServerFn()
         })
         .returning();
 
-      await tx.update(chat).set({ lastMessage: data.content }).where(eq(chat.id, data.chatId));
+      const messageAttachments =
+        data.attachments && data.attachments.length > 0
+          ? await tx
+              .insert(messageAttachment)
+              .values(
+                data.attachments.map((attachment) => ({
+                  messageId: newMessage.id,
+                  url: attachment.url,
+                  name: attachment.name,
+                  type: attachment.type,
+                })),
+              )
+              .returning()
+          : [];
+
+      const lastMessage = data.content ? data.content : 'Attachment';
+
+      await tx.update(chat).set({ lastMessage }).where(eq(chat.id, data.chatId));
 
       const [messageWithUser] = await tx
         .select({
@@ -217,7 +271,10 @@ export const sendMessageFn = createServerFn()
         .innerJoin(user, eq(message.senderId, user.id))
         .where(eq(message.id, newMessage.id));
 
-      return messageWithUser;
+      return {
+        ...messageWithUser,
+        attachments: messageAttachments,
+      };
     });
   });
 

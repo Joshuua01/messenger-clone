@@ -1,8 +1,12 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { MessageAttachment } from '@/lib/types';
 import { cn, formatTime, getInitials } from '@/lib/utils';
+import { FileAttachments } from './file-attachements';
+import { ImageGallery } from './image-gallery';
 
 interface MessageBubbleProps {
-  content: string;
+  content: string | null;
+  attachments?: MessageAttachment[] | null;
   isOwn: boolean;
   senderName?: string;
   senderImage?: string | null;
@@ -15,7 +19,11 @@ export const MessageBubble = ({
   senderName,
   senderImage,
   timestamp,
+  attachments,
 }: MessageBubbleProps) => {
+  const imageAttachments = attachments?.filter((a) => a.type.startsWith('image/')) || [];
+  const otherAttachments = attachments?.filter((a) => !a.type.startsWith('image/')) || [];
+
   return (
     <div
       className={cn(
@@ -34,16 +42,24 @@ export const MessageBubble = ({
           <AvatarFallback className="text-xs">{getInitials(senderName)}</AvatarFallback>
         </Avatar>
       )}
-      <div
-        className={cn(
-          'w-fit max-w-full rounded-lg px-3 py-2 wrap-break-word',
-          isOwn
-            ? 'bg-primary text-primary-foreground justify-self-end'
-            : 'bg-muted text-foreground justify-self-start',
-        )}
-      >
-        {content}
-      </div>
+      {content && (
+        <div
+          className={cn(
+            'w-fit max-w-full rounded-lg px-3 py-2 wrap-break-word',
+            isOwn
+              ? 'bg-primary text-primary-foreground justify-self-end'
+              : 'bg-muted text-foreground justify-self-start',
+          )}
+        >
+          {content}
+        </div>
+      )}
+
+      {imageAttachments.length > 0 && <ImageGallery images={imageAttachments} isOwn={isOwn} />}
+
+      {otherAttachments.length > 0 && (
+        <FileAttachments attachments={otherAttachments} isOwn={isOwn} />
+      )}
 
       {!isOwn && senderName && <div />}
       <span

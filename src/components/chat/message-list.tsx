@@ -30,6 +30,7 @@ export function MessageList({ isLoading, messages, currentUserId }: MessageListP
             )}
             <MessageBubble
               content={message.content}
+              attachments={message.attachments}
               isOwn={message.senderId === currentUserId}
               senderName={message.senderName}
               senderImage={message.senderImage}
