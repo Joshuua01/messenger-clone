@@ -103,7 +103,7 @@ function RouteComponent() {
           participants={participantsInfo}
         />
         <ScrollArea className="min-h-0 flex-1 px-6 py-1" onScroll={handleScroll} key={chatId}>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
             <MessageList messages={messages} isLoading={isLoading} currentUserId={currentUserId} />
             {isTyping && <TypingIndicator />}
             <div ref={scrollRef} />

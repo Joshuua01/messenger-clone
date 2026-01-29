@@ -11,6 +11,17 @@ interface MessageListProps {
 }
 
 export function MessageList({ isLoading, messages, currentUserId }: MessageListProps) {
+  const shouldShowTimeStamp = (
+    message: MessageWithSender,
+    nextMessage: MessageWithSender | undefined,
+  ) => {
+    if (!nextMessage) return true;
+    if (message.senderId !== nextMessage.senderId) return true;
+
+    const diff = new Date(nextMessage.createdAt).getTime() - new Date(message.createdAt).getTime();
+    return diff > 60 * 1000;
+  };
+
   return (
     <>
       {isLoading && (
@@ -35,6 +46,7 @@ export function MessageList({ isLoading, messages, currentUserId }: MessageListP
               senderName={message.senderName}
               senderImage={message.senderImage}
               timestamp={message.createdAt}
+              showTimestamp={shouldShowTimeStamp(message, messages[index + 1])}
             />
           </React.Fragment>
         ))

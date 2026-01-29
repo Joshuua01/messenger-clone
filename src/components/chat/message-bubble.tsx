@@ -11,6 +11,7 @@ interface MessageBubbleProps {
   senderName?: string;
   senderImage?: string | null;
   timestamp: Date;
+  showTimestamp: boolean;
 }
 
 export const MessageBubble = ({
@@ -20,6 +21,7 @@ export const MessageBubble = ({
   senderImage,
   timestamp,
   attachments,
+  showTimestamp,
 }: MessageBubbleProps) => {
   const imageAttachments = attachments?.filter((a) => a.type.startsWith('image/')) || [];
   const otherAttachments = attachments?.filter((a) => !a.type.startsWith('image/')) || [];
@@ -62,11 +64,13 @@ export const MessageBubble = ({
       )}
 
       {!isOwn && senderName && <div />}
-      <span
-        className={cn('text-muted-foreground px-1 text-xs', isOwn ? 'text-right' : 'text-left')}
-      >
-        {formatTime(timestamp)}
-      </span>
+      {showTimestamp && (
+        <span
+          className={cn('text-muted-foreground px-1 text-xs', isOwn ? 'text-right' : 'text-left')}
+        >
+          {formatTime(timestamp)}
+        </span>
+      )}
     </div>
   );
 };
