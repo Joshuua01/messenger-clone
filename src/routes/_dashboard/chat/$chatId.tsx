@@ -12,7 +12,6 @@ import { useSendMessage } from '@/hooks/use-send-message';
 import { getSessionFn } from '@/lib/fn/auth-fn';
 import { getMessagesForChatFn, getParticipantsInfoFn, markChatReadFn } from '@/lib/fn/chat-fn';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
-import { router } from 'better-auth/api';
 import React, { useEffect, useLayoutEffect, useMemo } from 'react';
 
 export const Route = createFileRoute('/_dashboard/chat/$chatId')({
