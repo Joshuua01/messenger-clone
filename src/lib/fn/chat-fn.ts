@@ -1,43 +1,62 @@
 import { db } from '@/server/db';
-import { chat, message, messageAttachment, privateChat, user } from '@/server/db/schema';
+import { chat, chatParticipant, message, messageAttachment, user } from '@/server/db/schema';
 import { createServerFn } from '@tanstack/react-start';
-import { and, desc, eq, inArray, isNotNull, lt, or } from 'drizzle-orm';
+import { and, count, desc, eq, gt, inArray, isNotNull, lt, ne } from 'drizzle-orm';
 import z from 'zod';
 import { withAuth } from '../middleware/auth-middleware';
 import { MessageWithSender } from '../types';
 
 const chatFnSchema = z.object({
-  participantIds: z.array(z.string()).length(2),
+  participantIds: z.array(z.string()).min(2),
 });
 
-export const createPrivateChatFn = createServerFn()
+export const createChatFn = createServerFn()
   .inputValidator(chatFnSchema)
   .middleware([withAuth])
   .handler(async ({ data }) => {
     const { participantIds } = data;
-    const [userA, userB] = participantIds.sort();
+    const uniqueParticipants = [...new Set(participantIds)].sort();
+    const isPrivate = uniqueParticipants.length <= 2;
 
-    const existingPrivate = await db.query.privateChat.findFirst({
-      where: (p) =>
-        or(
-          and(eq(p.userAId, userA), eq(p.userBId, userB)),
-          and(eq(p.userAId, userB), eq(p.userBId, userA)),
-        ),
-    });
+    if (isPrivate) {
+      const [userA, userB] = uniqueParticipants;
 
-    if (existingPrivate) {
-      return existingPrivate.chatId;
+      const existingChat = await db
+        .select({ chatId: chatParticipant.chatId })
+        .from(chatParticipant)
+        .innerJoin(chat, and(eq(chat.id, chatParticipant.chatId), eq(chat.type, 'private')))
+        .where(eq(chatParticipant.userId, userA))
+        .intersect(
+          db
+            .select({ chatId: chatParticipant.chatId })
+            .from(chatParticipant)
+            .where(eq(chatParticipant.userId, userB)),
+        )
+        .limit(1);
+
+      if (existingChat.length > 0) {
+        return existingChat[0].chatId;
+      }
     }
 
-    const [newChat] = await db.insert(chat).values({ type: 'private' }).returning({ id: chat.id });
+    return await db.transaction(async (tx) => {
+      const [newChat] = await tx
+        .insert(chat)
+        .values({
+          type: isPrivate ? 'private' : 'group',
+        })
+        .returning({ id: chat.id });
 
-    await db.insert(privateChat).values({
-      chatId: newChat.id,
-      userAId: userA,
-      userBId: userB,
+      await tx.insert(chatParticipant).values(
+        uniqueParticipants.map((userId) => ({
+          chatId: newChat.id,
+          userId,
+          lastReadAt: new Date(),
+        })),
+      );
+
+      return newChat.id;
     });
-
-    return newChat.id;
   });
 
 export const getCurrentUserChatsFn = createServerFn()
@@ -49,7 +68,7 @@ export const getCurrentUserChatsFn = createServerFn()
     }),
   )
   .handler(async ({ context, data }) => {
-    const { id: userId } = context.user;
+    const { id: currentUserId } = context.user;
     const { cursor, limit } = data;
 
     const chats = await db
@@ -57,23 +76,15 @@ export const getCurrentUserChatsFn = createServerFn()
         id: chat.id,
         lastMessage: chat.lastMessage,
         updatedAt: chat.updatedAt,
-        otherUserId: user.id,
-        otherUserName: user.name,
-        otherUserImage: user.image,
+        type: chat.type,
+        lastReadAt: chatParticipant.lastReadAt,
       })
       .from(chat)
-      .innerJoin(privateChat, eq(chat.id, privateChat.chatId))
-      .innerJoin(
-        user,
-        or(
-          and(eq(privateChat.userAId, user.id), eq(privateChat.userBId, userId)),
-          and(eq(privateChat.userBId, user.id), eq(privateChat.userAId, userId)),
-        ),
-      )
+      .innerJoin(chatParticipant, eq(chat.id, chatParticipant.chatId))
       .where(
         cursor
           ? and(
-              or(eq(privateChat.userAId, userId), eq(privateChat.userBId, userId)),
+              eq(chatParticipant.userId, currentUserId),
               isNotNull(chat.lastMessage),
               lt(
                 chat.updatedAt,
@@ -84,10 +95,7 @@ export const getCurrentUserChatsFn = createServerFn()
                   .limit(1),
               ),
             )
-          : and(
-              or(eq(privateChat.userAId, userId), eq(privateChat.userBId, userId)),
-              isNotNull(chat.lastMessage),
-            ),
+          : and(eq(chatParticipant.userId, currentUserId), isNotNull(chat.lastMessage)),
       )
       .orderBy(desc(chat.updatedAt))
       .limit(limit + 1);
@@ -95,38 +103,92 @@ export const getCurrentUserChatsFn = createServerFn()
     const hasMore = chats.length > limit;
     const chatsSlice = hasMore ? chats.slice(0, limit) : chats;
 
+    const chatIds = chatsSlice.map((c) => c.id);
+
+    const unreadCounts =
+      chatIds.length > 0
+        ? await db
+            .select({
+              chatId: message.chatId,
+              count: count(),
+            })
+            .from(message)
+            .innerJoin(
+              chatParticipant,
+              and(
+                eq(chatParticipant.chatId, message.chatId),
+                eq(chatParticipant.userId, currentUserId),
+              ),
+            )
+            .where(
+              and(
+                inArray(message.chatId, chatIds),
+                ne(message.senderId, currentUserId),
+                gt(message.createdAt, chatParticipant.lastReadAt),
+              ),
+            )
+            .groupBy(message.chatId)
+        : [];
+
+    const unreadByChat = Object.fromEntries(unreadCounts.map((u) => [u.chatId, u.count]));
+
+    const otherParticipants =
+      chatIds.length > 0
+        ? await db
+            .select({
+              chatId: chatParticipant.chatId,
+              userId: user.id,
+              userName: user.name,
+              userImage: user.image,
+            })
+            .from(chatParticipant)
+            .innerJoin(user, eq(user.id, chatParticipant.userId))
+            .where(
+              and(
+                ne(chatParticipant.userId, currentUserId),
+                inArray(chatParticipant.chatId, chatIds),
+              ),
+            )
+        : [];
+
+    const participantsByChat = otherParticipants.reduce<Record<string, typeof otherParticipants>>(
+      (acc, p) => {
+        (acc[p.chatId] ??= []).push(p);
+        return acc;
+      },
+      {},
+    );
+
+    const result = chatsSlice.map((chat) => ({
+      ...chat,
+      participants: participantsByChat[chat.id] ?? [],
+      unreadCount: unreadByChat[chat.id] ?? 0,
+    }));
+
     return {
-      chats: chatsSlice,
+      chats: result,
       nextCursor: hasMore ? chatsSlice[chatsSlice.length - 1].id : undefined,
     };
   });
 
-export const getOtherUserInfoFn = createServerFn()
+export const getParticipantsInfoFn = createServerFn()
   .inputValidator(z.string())
   .middleware([withAuth])
   .handler(async ({ data, context }) => {
     const chatId = data;
     const { id: currentUserId } = context.user;
 
-    const otherUserInfo = await db
+    const participantsInfo = await db
       .select({
-        otherUserId: user.id,
-        otherUserName: user.name,
-        otherUserImage: user.image,
+        id: user.id,
+        name: user.name,
+        image: user.image,
       })
-      .from(chat)
-      .innerJoin(privateChat, eq(chat.id, privateChat.chatId))
-      .innerJoin(
-        user,
-        or(
-          and(eq(privateChat.userAId, user.id), eq(privateChat.userBId, currentUserId)),
-          and(eq(privateChat.userBId, user.id), eq(privateChat.userAId, currentUserId)),
-        ),
-      )
-      .where(eq(chat.id, chatId))
-      .limit(1);
+      .from(chatParticipant)
+      .innerJoin(user, eq(chatParticipant.userId, user.id))
+      .where(and(eq(chatParticipant.chatId, chatId), ne(chatParticipant.userId, currentUserId)));
 
-    return otherUserInfo[0];
+    return participantsInfo;
   });
 
 export const getMessagesForChatFn = createServerFn()
@@ -278,18 +340,19 @@ export const sendMessageFn = createServerFn()
     });
   });
 
-export const getChatParticipantsFn = createServerFn()
-  .inputValidator(z.string())
+export const markChatReadFn = createServerFn()
+  .inputValidator(
+    z.object({
+      chatId: z.string(),
+    }),
+  )
   .middleware([withAuth])
-  .handler(async ({ data }) => {
-    const chatId = data;
+  .handler(async ({ data, context }) => {
+    const { chatId } = data;
+    const { id: userId } = context.user;
 
-    const [chat] = await db.select().from(privateChat).where(eq(privateChat.chatId, chatId));
-
-    if (chat) {
-      const participants = [chat.userAId, chat.userBId];
-      return participants;
-    }
-
-    return [];
+    await db
+      .update(chatParticipant)
+      .set({ lastReadAt: new Date() })
+      .where(and(eq(chatParticipant.chatId, chatId), eq(chatParticipant.userId, userId)));
   });

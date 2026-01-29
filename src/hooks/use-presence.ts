@@ -2,7 +2,7 @@ import { socket } from '@/lib/socket';
 import { useEffect, useMemo, useState } from 'react';
 
 export function usePresence(ids: Array<string>) {
-  const userIds = useMemo(() => Array.from(new Set(ids)), [ids]);
+  const userIds = useMemo(() => Array.from(new Set(ids)), [JSON.stringify(ids)]);
   const [state, setState] = useState<Record<string, boolean>>({});
 
   useEffect(() => {

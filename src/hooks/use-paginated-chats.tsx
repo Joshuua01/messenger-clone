@@ -7,9 +7,15 @@ interface UsePaginatedChatsOptions {
     id: string;
     lastMessage: string | null;
     updatedAt: Date;
-    otherUserId: string;
-    otherUserName: string;
-    otherUserImage: string | null;
+    type: 'private' | 'group';
+    lastReadAt: Date | null;
+    unreadCount: number;
+    participants: {
+      chatId: string;
+      userId: string;
+      userName: string;
+      userImage: string | null;
+    }[];
   }[];
   initialCursor: string | undefined;
 }

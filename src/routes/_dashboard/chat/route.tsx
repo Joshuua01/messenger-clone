@@ -40,7 +40,10 @@ function RouteComponent() {
     initialCursor,
   });
 
-  const trackedUsersIds = useMemo(() => chats.map((c) => c.otherUserId), [chats]);
+  const trackedUsersIds = useMemo(
+    () => [...new Set(chats.flatMap((c) => c.participants.map((p) => p.userId)))],
+    [chats],
+  );
 
   useUserSocket(currentUserId);
   const presence = usePresence(trackedUsersIds);
@@ -61,7 +64,11 @@ function RouteComponent() {
             {chats.length > 0 ? (
               <>
                 {chats.map((chat) => (
-                  <ChatItem chat={chat} isOnline={presence[chat.otherUserId]} key={chat.id} />
+                  <ChatItem
+                    chat={chat}
+                    isOnline={chat.participants.some((p) => presence[p.userId])}
+                    key={chat.id}
+                  />
                 ))}
                 {isLoading && (
                   <div className="flex justify-center py-4">

@@ -7,10 +7,10 @@ import { toast } from 'sonner';
 interface UseSendMessageOptions {
   chatId: string;
   currentUserId?: string;
-  otherUserId: string;
+  participantsIds: string[];
 }
 
-export function useSendMessage({ chatId, currentUserId, otherUserId }: UseSendMessageOptions) {
+export function useSendMessage({ chatId, currentUserId, participantsIds }: UseSendMessageOptions) {
   const sendMessage = useCallback(
     async (content: string) => {
       if (!currentUserId) return;
@@ -23,13 +23,13 @@ export function useSendMessage({ chatId, currentUserId, otherUserId }: UseSendMe
           },
         });
         socket.emit('send_message', savedMessage);
-        socket.emit('notify_chat', [currentUserId, otherUserId]);
+        socket.emit('notify_chat', [currentUserId, ...participantsIds]);
       } catch (error) {
         toast.error('Failed to send message. Please try again.');
         return;
       }
     },
-    [chatId, currentUserId, otherUserId],
+    [chatId, currentUserId, participantsIds],
   );
 
   const sendAttachments = useCallback(
@@ -50,13 +50,13 @@ export function useSendMessage({ chatId, currentUserId, otherUserId }: UseSendMe
           },
         });
         socket.emit('send_message', savedMessage);
-        socket.emit('notify_chat', [currentUserId, otherUserId]);
+        socket.emit('notify_chat', [currentUserId, ...participantsIds]);
       } catch (error: any) {
         toast.error(`Failed to upload attachments: ${error.message}`);
         return;
       }
     },
-    [chatId, currentUserId, otherUserId],
+    [chatId, currentUserId, participantsIds],
   );
 
   return { sendMessage, sendAttachments };

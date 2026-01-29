@@ -78,17 +78,20 @@ export const chat = pgTable('chat', {
     .notNull(),
 });
 
-export const privateChat = pgTable(
-  'private_chat',
+export const chatParticipant = pgTable(
+  'chat_participant',
   {
     id: uuid('id').primaryKey().defaultRandom(),
     chatId: uuid('chat_id')
       .notNull()
       .references(() => chat.id, { onDelete: 'cascade' }),
-    userAId: text('user_a_id').notNull(),
-    userBId: text('user_b_id').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    lastReadAt: timestamp('last_read_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
   },
-  (t) => [uniqueIndex('uq_private_chat_users').on(t.userAId, t.userBId)],
+  (t) => [uniqueIndex('uq_chat_participant').on(t.chatId, t.userId)],
 );
 
 export const message = pgTable('message', {
@@ -119,6 +122,3 @@ export type UserInsert = InferInsertModel<typeof user>;
 
 export type ChatSelect = InferSelectModel<typeof chat>;
 export type ChatInsert = InferInsertModel<typeof chat>;
-
-export type PrivateChatSelect = InferSelectModel<typeof privateChat>;
-export type PrivateChatInsert = InferInsertModel<typeof privateChat>;

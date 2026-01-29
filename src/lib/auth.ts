@@ -2,7 +2,7 @@ import { db } from '@/server/db';
 import * as schema from '@/server/db/schema';
 import { APIError, betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { reactStartCookies } from 'better-auth/react-start';
+import { tanstackStartCookies } from 'better-auth/tanstack-start';
 import { deleteAvatarFn } from './fn/upload-fn';
 
 export const auth = betterAuth({
@@ -13,7 +13,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
-  plugins: [reactStartCookies()],
+  plugins: [tanstackStartCookies()],
   baseURL: 'http://localhost:3000',
   user: {
     changeEmail: {

@@ -1,5 +1,5 @@
 import { useSession } from '@/lib/auth-client';
-import { createPrivateChatFn } from '@/lib/fn/chat-fn';
+import { createChatFn } from '@/lib/fn/chat-fn';
 import { searchUserFn } from '@/lib/fn/user-fn';
 import { UserSelect } from '@/server/db/schema';
 import { useNavigate } from '@tanstack/react-router';
@@ -53,7 +53,7 @@ export function SearchUserDialog() {
 
   const handleChatCreate = async (userId: string, currentUserId: string) => {
     try {
-      const result = await createPrivateChatFn({
+      const result = await createChatFn({
         data: {
           participantIds: [userId, currentUserId],
         },

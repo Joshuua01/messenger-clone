@@ -10,32 +10,34 @@ import { usePresence } from '@/hooks/use-presence';
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import { useSendMessage } from '@/hooks/use-send-message';
 import { getSessionFn } from '@/lib/fn/auth-fn';
-import { getMessagesForChatFn, getOtherUserInfoFn } from '@/lib/fn/chat-fn';
-import { createFileRoute } from '@tanstack/react-router';
-import React, { useEffect, useLayoutEffect } from 'react';
+import { getMessagesForChatFn, getParticipantsInfoFn, markChatReadFn } from '@/lib/fn/chat-fn';
+import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { router } from 'better-auth/api';
+import React, { useEffect, useLayoutEffect, useMemo } from 'react';
 
 export const Route = createFileRoute('/_dashboard/chat/$chatId')({
   component: RouteComponent,
   loader: async ({ params }) => {
     const { chatId } = params;
-    const [chatData, currentSession, otherUserInfo] = await Promise.all([
+    const [chatData, currentSession, participantsInfo] = await Promise.all([
       getMessagesForChatFn({ data: { chatId } }),
       getSessionFn(),
-      getOtherUserInfoFn({ data: chatId }),
+      getParticipantsInfoFn({ data: chatId }),
     ]);
 
     return {
       chatMessages: chatData.messages,
       initialCursor: chatData.nextCursor,
       currentUserId: currentSession.session.data?.user.id,
-      otherUserInfo,
+      participantsInfo,
     };
   },
 });
 
 function RouteComponent() {
+  const router = useRouter();
   const { chatId } = Route.useParams();
-  const { chatMessages, initialCursor, currentUserId, otherUserInfo } = Route.useLoaderData();
+  const { chatMessages, initialCursor, currentUserId, participantsInfo } = Route.useLoaderData();
 
   const { scrollRef, isAtBottom, scrollToBottom, checkScrollPosition } = useScrollToBottom();
 
@@ -50,7 +52,9 @@ function RouteComponent() {
     scrollToBottom('smooth');
   });
 
-  const presence = usePresence([otherUserInfo.otherUserId]);
+  const participantsIds = useMemo(() => participantsInfo.map((p) => p.id), [participantsInfo]);
+
+  const presence = usePresence(participantsIds);
 
   useLayoutEffect(() => {
     scrollToBottom();
@@ -63,7 +67,7 @@ function RouteComponent() {
   const { sendAttachments, sendMessage } = useSendMessage({
     chatId,
     currentUserId: currentUserId,
-    otherUserId: otherUserInfo.otherUserId,
+    participantsIds,
   });
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -75,13 +79,29 @@ function RouteComponent() {
     checkScrollPosition(target);
   };
 
+  useEffect(() => {
+    const markAsRead = async () => {
+      if (document.visibilityState === 'visible') {
+        await markChatReadFn({ data: { chatId } });
+        router.invalidate();
+      }
+    };
+
+    markAsRead();
+
+    document.addEventListener('visibilitychange', markAsRead);
+
+    return () => {
+      document.removeEventListener('visibilitychange', markAsRead);
+    };
+  }, [chatId]);
+
   return (
     <div className="h-full flex-1 overflow-hidden">
       <div className="bg-card text-card-foreground flex h-full flex-col overflow-hidden rounded-xl border shadow-sm">
         <ChatHeader
-          isOnline={presence[otherUserInfo.otherUserId]}
-          userName={otherUserInfo.otherUserName}
-          imageUrl={otherUserInfo.otherUserImage}
+          isOnline={participantsIds.some((id) => presence[id])}
+          participants={participantsInfo}
         />
         <ScrollArea className="min-h-0 flex-1 px-6 py-1" onScroll={handleScroll} key={chatId}>
           <div className="flex flex-col gap-3">
