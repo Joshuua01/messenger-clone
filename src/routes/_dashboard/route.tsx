@@ -1,6 +1,7 @@
 import { AlertButton } from '@/components/alert-button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { signOut, useSession } from '@/lib/auth-client';
+import { signOut } from '@/lib/auth-client';
+import { getSessionFn } from '@/lib/fn/auth-fn';
 import { socket } from '@/lib/socket';
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from '@tanstack/react-router';
 import { LayoutGrid, LogOut, MessageCircle, MessageCircleHeart, Settings } from 'lucide-react';
@@ -8,10 +9,14 @@ import { toast } from 'sonner';
 
 export const Route = createFileRoute('/_dashboard')({
   component: RouteComponent,
+  loader: async () => {
+    const session = await getSessionFn();
+    return { session: session.session.data };
+  },
 });
 
 function RouteComponent() {
-  const session = useSession();
+  const { session } = Route.useLoaderData();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -27,7 +32,7 @@ function RouteComponent() {
       toast.error(`${result.error.message}`);
       return;
     }
-    disconnectUserSocket(session.data?.user?.id);
+    disconnectUserSocket(session?.user?.id);
     toast.success('Signed out successfully');
     navigate({
       to: '/login',
@@ -70,8 +75,8 @@ function RouteComponent() {
 
         <div className="flex flex-col items-center gap-5">
           <Avatar>
-            <AvatarImage src={session.data?.user?.image ?? undefined} />
-            <AvatarFallback>{session.data?.user?.name?.[0] ?? 'U'}</AvatarFallback>
+            <AvatarImage src={session?.user?.image ?? undefined} />
+            <AvatarFallback>{session?.user?.name?.[0] ?? 'U'}</AvatarFallback>
           </Avatar>
 
           <AlertButton
