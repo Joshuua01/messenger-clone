@@ -8,17 +8,17 @@ import { MessageWithSender } from '../types';
 
 const chatFnSchema = z.object({
   participantIds: z.array(z.string()).min(2),
+  type: z.enum(['private', 'group']),
 });
 
 export const createChatFn = createServerFn()
   .inputValidator(chatFnSchema)
   .middleware([withAuth])
   .handler(async ({ data }) => {
-    const { participantIds } = data;
+    const { participantIds, type } = data;
     const uniqueParticipants = [...new Set(participantIds)].sort();
-    const isPrivate = uniqueParticipants.length <= 2;
 
-    if (isPrivate) {
+    if (type === 'private') {
       const [userA, userB] = uniqueParticipants;
 
       const existingChat = await db
@@ -43,7 +43,7 @@ export const createChatFn = createServerFn()
       const [newChat] = await tx
         .insert(chat)
         .values({
-          type: isPrivate ? 'private' : 'group',
+          type,
         })
         .returning({ id: chat.id });
 

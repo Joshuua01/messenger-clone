@@ -3,7 +3,7 @@ import { createChatFn } from '@/lib/fn/chat-fn';
 import { searchUserFn } from '@/lib/fn/user-fn';
 import { UserSelect } from '@/server/db/schema';
 import { useNavigate } from '@tanstack/react-router';
-import { Search } from 'lucide-react';
+import { Search, Send, UserPlus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -15,11 +15,14 @@ import {
   CommandItem,
   CommandList,
 } from '../ui/command';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
 
 export function SearchUserDialog() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [users, setUsers] = useState<UserSelect[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<UserSelect[]>([]);
   const session = useSession();
   const navigate = useNavigate();
 
@@ -34,6 +37,7 @@ export function SearchUserDialog() {
             error instanceof Error ? error.message : 'An error occurred while searching for users.',
           );
           setUsers([]);
+          setSelectedUsers([]);
         }
       };
       const timeoutId = setTimeout(searchUsers, 300);
@@ -48,19 +52,26 @@ export function SearchUserDialog() {
     if (!newOpen) {
       setSearch('');
       setUsers([]);
+      setSelectedUsers([]);
     }
   };
 
-  const handleChatCreate = async (userId: string, currentUserId: string) => {
+  const handleChatCreate = async (
+    participantsIds: string[],
+    currentUserId: string,
+    type: 'private' | 'group',
+  ) => {
     try {
       const result = await createChatFn({
         data: {
-          participantIds: [userId, currentUserId],
+          participantIds: [currentUserId, ...participantsIds],
+          type,
         },
       });
       setOpen(false);
       setSearch('');
       setUsers([]);
+      setSelectedUsers([]);
       navigate({ to: `/chat/${result}` });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to create chat.');
@@ -85,19 +96,70 @@ export function SearchUserDialog() {
                 <CommandItem
                   key={user.id}
                   value={user.name}
-                  onSelect={() => handleChatCreate(user.id, session.data!.user!.id)}
-                  className="cursor-pointer"
+                  className="flex cursor-pointer items-center"
                 >
                   <Avatar>
                     <AvatarImage src={user.image ?? undefined} />
                     <AvatarFallback>{user.name.charAt(0) ?? 'U'}</AvatarFallback>
                   </Avatar>
-                  <span className="ml-2">{user.name}</span>
+                  <span className="ml-2 flex-1">{user.name}</span>
+                  <Button
+                    size={'icon'}
+                    onClick={() => {
+                      if (selectedUsers.find((u) => u.id === user.id)) return;
+                      setSelectedUsers((prev) => [...prev, user]);
+                    }}
+                  >
+                    <UserPlus className="text-primary-foreground" />
+                  </Button>
+                  <Button
+                    size={'icon'}
+                    onClick={() =>
+                      handleChatCreate(
+                        selectedUsers.map((user) => user.id),
+                        session.data!.user!.id,
+                        'private',
+                      )
+                    }
+                  >
+                    <Send className="text-primary-foreground" />
+                  </Button>
                 </CommandItem>
               ))}
             </CommandGroup>
           )}
         </CommandList>
+        {selectedUsers.length > 0 && (
+          <div className="flex">
+            <div className="flex flex-1 flex-wrap items-center gap-2 p-4">
+              {selectedUsers.map((user) => (
+                <Badge
+                  key={user.id}
+                  className="hover:bg-accent-foreground/50 flex cursor-pointer items-center gap-1 transition-colors duration-100"
+                  onClick={() => setSelectedUsers((prev) => prev.filter((u) => u.id !== user.id))}
+                >
+                  {user.name}
+                  <X data-icon="inline-end" />
+                </Badge>
+              ))}
+            </div>
+            <div className="flex justify-end p-4">
+              <Button
+                onClick={() =>
+                  handleChatCreate(
+                    selectedUsers.map((user) => user.id),
+                    session.data!.user!.id,
+                    'group',
+                  )
+                }
+                size={'sm'}
+                disabled={selectedUsers.length < 2}
+              >
+                Create group
+              </Button>
+            </div>
+          </div>
+        )}
       </CommandDialog>
     </>
   );
