@@ -1,8 +1,8 @@
-import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface FormFieldProps {
   field: any;
@@ -27,15 +27,17 @@ export function FormField({
 }: FormFieldProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (type === 'file' && field.state.value instanceof File) {
-      const url = URL.createObjectURL(field.state.value);
-      setPreviewUrl(url);
-      return () => URL.revokeObjectURL(url);
+  const handleFileChange = (file: File | null) => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    if (file) {
+      setPreviewUrl(URL.createObjectURL(file));
     } else {
       setPreviewUrl(null);
     }
-  }, [field.state.value, type]);
+    field.handleChange(file);
+  };
 
   return (
     <div className="space-y-1">
@@ -55,12 +57,13 @@ export function FormField({
             onBlur={field.handleBlur}
             onChange={(e) => {
               const file = e.target.files?.[0] ?? null;
-              field.handleChange(file);
+              handleFileChange(file);
             }}
             className="cursor-pointer"
           />
           <Avatar className="h-10 w-10">
             <AvatarImage src={previewUrl ?? currentImage} />
+            <AvatarFallback>{label[0]}</AvatarFallback>
           </Avatar>
         </div>
       ) : (

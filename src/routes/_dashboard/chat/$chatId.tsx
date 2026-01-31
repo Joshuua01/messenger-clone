@@ -10,7 +10,12 @@ import { usePresence } from '@/hooks/use-presence';
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import { useSendMessage } from '@/hooks/use-send-message';
 import { getSessionFn } from '@/lib/fn/auth-fn';
-import { getMessagesForChatFn, getParticipantsInfoFn, markChatReadFn } from '@/lib/fn/chat-fn';
+import {
+  getChatInfoFn,
+  getMessagesForChatFn,
+  getParticipantsInfoFn,
+  markChatReadFn,
+} from '@/lib/fn/chat-fn';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import React, { useEffect, useLayoutEffect, useMemo } from 'react';
 
@@ -18,8 +23,9 @@ export const Route = createFileRoute('/_dashboard/chat/$chatId')({
   component: RouteComponent,
   loader: async ({ params }) => {
     const { chatId } = params;
-    const [chatData, currentSession, participantsInfo] = await Promise.all([
+    const [chatData, chatInfo, currentSession, participantsInfo] = await Promise.all([
       getMessagesForChatFn({ data: { chatId } }),
+      getChatInfoFn({ data: chatId }),
       getSessionFn(),
       getParticipantsInfoFn({ data: chatId }),
     ]);
@@ -27,6 +33,7 @@ export const Route = createFileRoute('/_dashboard/chat/$chatId')({
     return {
       chatMessages: chatData.messages,
       initialCursor: chatData.nextCursor,
+      chatInfo,
       currentUserId: currentSession.session.data?.user.id,
       participantsInfo,
     };
@@ -36,7 +43,8 @@ export const Route = createFileRoute('/_dashboard/chat/$chatId')({
 function RouteComponent() {
   const router = useRouter();
   const { chatId } = Route.useParams();
-  const { chatMessages, initialCursor, currentUserId, participantsInfo } = Route.useLoaderData();
+  const { chatMessages, initialCursor, currentUserId, chatInfo, participantsInfo } =
+    Route.useLoaderData();
 
   const { scrollRef, isAtBottom, scrollToBottom, checkScrollPosition } = useScrollToBottom();
 
@@ -101,6 +109,7 @@ function RouteComponent() {
         <ChatHeader
           isOnline={participantsIds.some((id) => presence[id])}
           participants={participantsInfo}
+          chatInfo={chatInfo}
         />
         <ScrollArea className="min-h-0 flex-1 px-6 py-1" onScroll={handleScroll} key={chatId}>
           <div className="flex flex-col gap-1">

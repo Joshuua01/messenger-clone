@@ -1,5 +1,6 @@
-import { authClient, useSession } from '@/lib/auth-client';
+import { editChatFn } from '@/lib/fn/chat-fn';
 import { uploadImageFn } from '@/lib/fn/upload-fn';
+import { ChatSelect } from '@/server/db/schema';
 import { useForm } from '@tanstack/react-form';
 import { useRouter } from '@tanstack/react-router';
 import { toast } from 'sonner';
@@ -8,11 +9,13 @@ import { FormField } from '../form-field';
 import { Button } from '../ui/button';
 import { Spinner } from '../ui/spinner';
 
-export function ChangeProfilePictureForm() {
-  const session = useSession();
-  const router = useRouter();
+interface ChangeChatPictureFormProps {
+  chatInfo: ChatSelect;
+}
 
-  const uploadAvatarForm = useForm({
+export function ChangeChatPictureForm({ chatInfo }: ChangeChatPictureFormProps) {
+  const router = useRouter();
+  const form = useForm({
     defaultValues: {
       file: null as File | null,
     },
@@ -26,27 +29,21 @@ export function ChangeProfilePictureForm() {
     onSubmit: async (values) => {
       const formData = new FormData();
       formData.append('file', values.value.file!);
-      formData.append('type', 'avatar');
-      formData.append('currentImage', session.data?.user.image ?? '');
+      formData.append('type', 'group');
+      formData.append('currentImage', chatInfo.imageUrl ?? '');
 
       try {
         const result = await uploadImageFn({ data: formData });
-        await authClient.updateUser(
-          {
-            image: result.url,
+        await editChatFn({
+          data: {
+            chatId: chatInfo.id,
+            imageUrl: result.url,
           },
-          {
-            onSuccess: () => {
-              router.invalidate();
-              toast.success('Profile picture updated successfully!');
-            },
-            onError: (ctx) => {
-              toast.error(ctx.error.message);
-            },
-          },
-        );
+        });
+        toast.success('Chat picture updated successfully');
+        router.invalidate();
       } catch (error: any) {
-        toast.error(`Image upload failed: ${error.message}`);
+        toast.error(`Chat image change failed: ${error.message}`);
         return;
       }
     },
@@ -54,34 +51,28 @@ export function ChangeProfilePictureForm() {
 
   return (
     <div>
-      <h1 className="text-lg font-bold">Profile Picture</h1>
       <form
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          uploadAvatarForm.handleSubmit();
+          form.handleSubmit();
         }}
-        className="mt-4 flex flex-col gap-1"
+        className="mt-4 flex flex-col"
       >
-        <uploadAvatarForm.Field name="file">
+        <form.Field name="file">
           {(field) => (
             <FormField
               field={field}
-              label="Upload profile picture"
+              label="Upload chat picture"
               type="file"
               labelFont="font-semibold"
-              currentImage={session.data?.user.image ?? undefined}
+              currentImage={chatInfo.imageUrl ?? undefined}
             />
           )}
-        </uploadAvatarForm.Field>
-        <uploadAvatarForm.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+        </form.Field>
+        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
-            <Button
-              type="submit"
-              disabled={!canSubmit}
-              size={'lg'}
-              className="mt-2 self-end font-bold"
-            >
+            <Button type="submit" disabled={!canSubmit} className="self-end font-bold">
               {isSubmitting ? (
                 <>
                   <Spinner /> Uploading...
@@ -91,7 +82,7 @@ export function ChangeProfilePictureForm() {
               )}
             </Button>
           )}
-        </uploadAvatarForm.Subscribe>
+        </form.Subscribe>
       </form>
     </div>
   );

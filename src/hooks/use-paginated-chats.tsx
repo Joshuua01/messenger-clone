@@ -6,6 +6,8 @@ interface UsePaginatedChatsOptions {
   initialChats: {
     id: string;
     lastMessage: string | null;
+    imageUrl: string | null;
+    name: string | null;
     updatedAt: Date;
     type: 'private' | 'group';
     lastReadAt: Date | null;

@@ -71,6 +71,8 @@ export const chat = pgTable('chat', {
   id: uuid('id').primaryKey().defaultRandom(),
   type: chatTypeEnum('type').default('private').notNull(),
   lastMessage: text('last_message'),
+  imageUrl: text('image_url'),
+  name: text('name'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at')
     .defaultNow()

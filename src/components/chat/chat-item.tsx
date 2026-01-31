@@ -7,6 +7,8 @@ interface ChatItemProps {
   chat: {
     id: string;
     lastMessage: string | null;
+    imageUrl: string | null;
+    name: string | null;
     updatedAt: Date;
     type: 'private' | 'group';
     lastReadAt: Date | null;
@@ -41,13 +43,15 @@ export function ChatItem({ chat, isOnline }: ChatItemProps) {
       }
     >
       <Avatar className={cn('h-12 w-12', isOnline && 'ring-3 ring-green-500')}>
-        <AvatarImage src={chat.participants[0]?.userImage ?? undefined} />
-        <AvatarFallback>{chat.participants[0]?.userName?.[0] ?? 'U'}</AvatarFallback>
+        <AvatarImage src={chat.imageUrl ?? chat.participants[0]?.userImage ?? undefined} />
+        <AvatarFallback>
+          {chat.name?.[0] ?? chat.participants[0]?.userName?.[0] ?? 'U'}
+        </AvatarFallback>
       </Avatar>
       <div className="min-w-0 flex-1">
         <div className="flex">
           <h3 className="max-w-55 flex-1 truncate text-lg font-semibold">
-            {chat.participants.map((p) => p.userName).join(', ')}
+            {chat.name ? chat.name : chat.participants.map((p) => p.userName).join(', ')}
           </h3>
           {chat.unreadCount > 0 && (
             <Badge variant={'secondary'}>{chat.unreadCount > 99 ? '99+' : chat.unreadCount}</Badge>

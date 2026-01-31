@@ -59,6 +59,40 @@ export const createChatFn = createServerFn()
     });
   });
 
+export const getChatInfoFn = createServerFn()
+  .inputValidator(z.string())
+  .middleware([withAuth])
+  .handler(async ({ data }) => {
+    const chatId = data;
+
+    const chatInfo = await db.select().from(chat).where(eq(chat.id, chatId)).limit(1);
+
+    if (chatInfo.length === 0) {
+      throw new Error('Chat not found');
+    }
+
+    return chatInfo[0];
+  });
+
+export const editChatFn = createServerFn()
+  .inputValidator(
+    z.object({
+      chatId: z.string(),
+      name: z.string().min(1).max(100).optional(),
+      imageUrl: z.string().optional().optional(),
+    }),
+  )
+  .middleware([withAuth])
+  .handler(async ({ data }) => {
+    const { chatId, name, imageUrl } = data;
+
+    const result = await db.update(chat).set({ name, imageUrl }).where(eq(chat.id, chatId));
+
+    if (result.rowCount === 0) {
+      throw new Error('No rows affected');
+    }
+  });
+
 export const getCurrentUserChatsFn = createServerFn()
   .middleware([withAuth])
   .inputValidator(
@@ -75,6 +109,8 @@ export const getCurrentUserChatsFn = createServerFn()
       .select({
         id: chat.id,
         lastMessage: chat.lastMessage,
+        imageUrl: chat.imageUrl,
+        name: chat.name,
         updatedAt: chat.updatedAt,
         type: chat.type,
         lastReadAt: chatParticipant.lastReadAt,

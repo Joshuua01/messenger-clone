@@ -1,12 +1,12 @@
 import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { createServerFn } from '@tanstack/react-start';
+import { randomUUID } from 'crypto';
 import z from 'zod';
 import { withAuth } from '../middleware/auth-middleware';
 import { s3 } from '../s3';
-import { randomUUID } from 'crypto';
 
-export const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
-export const AVATAR_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+export const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+export const IMAGE_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 export const MAX_ATTACHMENT_SIZE = 15 * 1024 * 1024;
 export const ATTACHMENT_ALLOWED_TYPES = [
@@ -26,69 +26,32 @@ export const ATTACHMENT_ALLOWED_TYPES = [
   'application/vnd.rar',
 ];
 
-export const uploadAvatarFn = createServerFn({ method: 'POST' })
+export const uploadImageFn = createServerFn({ method: 'POST' })
   .middleware([withAuth])
   .inputValidator(z.instanceof(FormData))
-  .handler(async ({ data: formData, context }) => {
+  .handler(async ({ data: formData }) => {
     const file = formData.get('file') as File;
-    const currentImage = context.user.image;
+    const type = formData.get('type') as 'avatar' | 'group';
+    const currentImage = formData.get('currentImage') as string | null;
 
-    if (!file) {
-      throw new Error('No file provided');
-    }
+    if (!file) throw new Error('No file provided');
 
-    if (!AVATAR_ALLOWED_TYPES.includes(file.type)) {
+    if (!IMAGE_ALLOWED_TYPES.includes(file.type)) {
       throw new Error('Invalid file type. Allowed: JPEG, PNG, WebP');
     }
 
-    if (file.size > MAX_AVATAR_SIZE) {
+    if (file.size > MAX_IMAGE_SIZE) {
       throw new Error('File too large. Maximum size is 5MB');
     }
 
     if (currentImage) {
-      await deleteAvatarFn({ data: { imageUrl: currentImage } });
+      await deleteImageFn({ data: { imageUrl: currentImage } });
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const fileName = `${randomUUID()}-${file.name}`;
+    const prefix = type + '/';
+    const url = await uploadFileToS3(file, process.env.S3_IMAGE_BUCKET!, prefix);
 
-    const upload = await s3.send(
-      new PutObjectCommand({
-        Bucket: process.env.S3_AVATAR_BUCKET!,
-        Key: fileName,
-        Body: Buffer.from(arrayBuffer),
-        ContentType: file.type,
-      }),
-    );
-
-    if (upload.$metadata.httpStatusCode !== 200) {
-      throw new Error('Image upload failed');
-    }
-
-    const publicUrl = `${process.env.S3_ENDPOINT!}/${process.env.S3_AVATAR_BUCKET}/${fileName}`;
-
-    return { url: publicUrl };
-  });
-
-export const deleteAvatarFn = createServerFn({ method: 'POST' })
-  .middleware([withAuth])
-  .inputValidator(z.object({ imageUrl: z.string() }))
-  .handler(async ({ data: { imageUrl } }) => {
-    const urlParts = imageUrl.split('/');
-    const imageKey = urlParts[urlParts.length - 1];
-
-    const deleteObject = await s3.send(
-      new DeleteObjectCommand({
-        Bucket: process.env.S3_AVATAR_BUCKET!,
-        Key: imageKey,
-      }),
-    );
-
-    if (deleteObject.$metadata.httpStatusCode !== 204) {
-      throw new Error('Image deletion failed');
-    }
-
-    return { success: true };
+    return { url };
   });
 
 export const uploadMessageAttachmentFn = createServerFn({ method: 'POST' })
@@ -120,24 +83,51 @@ export const uploadMessageAttachmentFn = createServerFn({ method: 'POST' })
         throw new Error('File too large. Maximum size is 15MB');
       }
 
-      const arrayBuffer = await file.arrayBuffer();
-      const fileName = `${randomUUID()}-${file.name}`;
-
-      const upload = await s3.send(
-        new PutObjectCommand({
-          Bucket: process.env.S3_ATTACHMENT_BUCKET!,
-          Key: fileName,
-          Body: Buffer.from(arrayBuffer),
-          ContentType: file.type,
-        }),
-      );
-
-      if (upload.$metadata.httpStatusCode !== 200) {
-        throw new Error('Attachment upload failed');
-      }
-      const publicUrl = `${process.env.S3_ENDPOINT!}/${process.env.S3_ATTACHMENT_BUCKET}/${fileName}`;
+      const publicUrl = await uploadFileToS3(file, process.env.S3_ATTACHMENT_BUCKET!);
       result.push({ url: publicUrl, name: file.name, type: file.type });
     }
 
     return result;
   });
+
+export const deleteImageFn = createServerFn({ method: 'POST' })
+  .middleware([withAuth])
+  .inputValidator(z.object({ imageUrl: z.string() }))
+  .handler(async ({ data: { imageUrl } }) => {
+    const bucket = process.env.S3_IMAGE_BUCKET!;
+    const imageKey = imageUrl.split(`${bucket}/`)[1];
+
+    const deleteObject = await s3.send(
+      new DeleteObjectCommand({
+        Bucket: bucket,
+        Key: imageKey,
+      }),
+    );
+
+    if (deleteObject.$metadata.httpStatusCode !== 204) {
+      throw new Error('Image deletion failed');
+    }
+
+    return { success: true };
+  });
+
+async function uploadFileToS3(file: File, bucket: string, prefix: string = ''): Promise<string> {
+  const arrayBuffer = await file.arrayBuffer();
+  const fileName = `${randomUUID()}-${file.name}`;
+  const key = prefix + fileName;
+
+  const upload = await s3.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Body: Buffer.from(arrayBuffer),
+      ContentType: file.type,
+    }),
+  );
+
+  if (upload.$metadata.httpStatusCode !== 200) {
+    throw new Error('File upload failed');
+  }
+
+  return `${process.env.S3_ENDPOINT}/${bucket}/${key}`;
+}
