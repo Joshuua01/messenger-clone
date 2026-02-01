@@ -250,6 +250,26 @@ export const getParticipantsInfoFn = createServerFn()
     return participantsInfo;
   });
 
+export const removeUserFromChatFn = createServerFn()
+  .inputValidator(
+    z.object({
+      chatId: z.string(),
+      userId: z.string(),
+    }),
+  )
+  .middleware([withAuth])
+  .handler(async ({ data }) => {
+    const { chatId, userId } = data;
+
+    const result = await db
+      .delete(chatParticipant)
+      .where(and(eq(chatParticipant.chatId, chatId), eq(chatParticipant.userId, userId)));
+
+    if (result.rowCount === 0) {
+      throw new Error('No rows affected');
+    }
+  });
+
 export const getMessagesForChatFn = createServerFn()
   .inputValidator(
     z.object({
@@ -350,6 +370,12 @@ export const sendMessageFn = createServerFn()
   )
   .handler(async ({ data }): Promise<MessageWithSender> => {
     return await db.transaction(async (tx) => {
+      const chatSelect = await tx.select().from(chat).where(eq(chat.id, data.chatId)).limit(1);
+
+      if (chatSelect.length === 0) {
+        throw new Error('Chat not found');
+      }
+
       const [newMessage] = await tx
         .insert(message)
         .values({

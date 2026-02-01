@@ -4,10 +4,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { ChatSettingsDialog } from './chat-settings-dialog';
 import { AlertButton } from '../alert-button';
 import { Button } from '../ui/button';
-import { Trash } from 'lucide-react';
+import { ArrowLeftFromLine, Trash } from 'lucide-react';
 import { toast } from 'sonner';
-import { deleteChatFn } from '@/lib/fn/chat-fn';
+import { deleteChatFn, removeUserFromChatFn } from '@/lib/fn/chat-fn';
 import { useNavigate } from '@tanstack/react-router';
+import { useSession } from '@/lib/auth-client';
 
 interface ChatHeaderProps {
   isOnline: boolean;
@@ -21,8 +22,9 @@ interface ChatHeaderProps {
 
 export function ChatHeader({ isOnline, participants, chatInfo }: ChatHeaderProps) {
   const navigate = useNavigate();
+  const { data: session } = useSession();
 
-  const handleDeleteChat = async () => {
+  const handleChatDelete = async () => {
     try {
       await deleteChatFn({ data: chatInfo.id });
       toast.success('Chat deleted successfully');
@@ -31,6 +33,20 @@ export function ChatHeader({ isOnline, participants, chatInfo }: ChatHeaderProps
       });
     } catch (error: any) {
       toast.error(`Chat delete failed: ${error.message}`);
+      return;
+    }
+  };
+
+  const handleChatLeave = async () => {
+    try {
+      if (!session?.user.id) throw new Error('User not authenticated');
+      await removeUserFromChatFn({ data: { chatId: chatInfo.id, userId: session?.user.id } });
+      toast.success('You have left the chat');
+      navigate({
+        to: '/chat',
+      });
+    } catch (error: any) {
+      toast.error(`Leave chat failed: ${error.message}`);
       return;
     }
   };
@@ -54,15 +70,26 @@ export function ChatHeader({ isOnline, participants, chatInfo }: ChatHeaderProps
         {chatInfo.name ? chatInfo.name : participants.map((p) => p.name).join(', ')}
       </h1>
       {chatInfo.type === 'group' && (
-        <AlertButton
-          title="Delete chat"
-          description="Are you sure you want to delete this chat? This action cannot be undone."
-          onClick={handleDeleteChat}
-        >
-          <Button variant="destructive" size="icon-lg">
-            <Trash />
-          </Button>
-        </AlertButton>
+        <>
+          <AlertButton
+            title="Delete chat"
+            description="Are you sure you want to delete this chat? This action cannot be undone."
+            onClick={handleChatDelete}
+          >
+            <Button variant="destructive" size="icon-lg">
+              <Trash />
+            </Button>
+          </AlertButton>
+          <AlertButton
+            title="Leave group"
+            description="Are you sure you want to leave this group? You will no longer be able to access its messages."
+            onClick={handleChatLeave}
+          >
+            <Button variant="outline" size="icon-lg">
+              <ArrowLeftFromLine />
+            </Button>
+          </AlertButton>
+        </>
       )}
       <ChatSettingsDialog chatInfo={chatInfo} />
     </header>
