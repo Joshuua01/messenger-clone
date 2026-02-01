@@ -93,6 +93,29 @@ export const editChatFn = createServerFn()
     }
   });
 
+export const deleteChatFn = createServerFn()
+  .inputValidator(z.string())
+  .middleware([withAuth])
+  .handler(async ({ data }) => {
+    const chatId = data;
+
+    const chatSelect = await db.select().from(chat).where(eq(chat.id, chatId)).limit(1);
+
+    if (chatSelect.length === 0) {
+      throw new Error('Chat not found');
+    }
+
+    if (chatSelect[0].type === 'private') {
+      throw new Error('Cannot delete private chats');
+    }
+
+    const result = await db.delete(chat).where(eq(chat.id, chatId));
+
+    if (result.rowCount === 0) {
+      throw new Error('No rows affected');
+    }
+  });
+
 export const getCurrentUserChatsFn = createServerFn()
   .middleware([withAuth])
   .inputValidator(

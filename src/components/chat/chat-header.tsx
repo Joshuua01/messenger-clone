@@ -2,6 +2,12 @@ import { cn, getInitials } from '@/lib/utils';
 import { ChatSelect } from '@/server/db/schema';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { ChatSettingsDialog } from './chat-settings-dialog';
+import { AlertButton } from '../alert-button';
+import { Button } from '../ui/button';
+import { Trash } from 'lucide-react';
+import { toast } from 'sonner';
+import { deleteChatFn } from '@/lib/fn/chat-fn';
+import { useNavigate } from '@tanstack/react-router';
 
 interface ChatHeaderProps {
   isOnline: boolean;
@@ -14,8 +20,23 @@ interface ChatHeaderProps {
 }
 
 export function ChatHeader({ isOnline, participants, chatInfo }: ChatHeaderProps) {
+  const navigate = useNavigate();
+
+  const handleDeleteChat = async () => {
+    try {
+      await deleteChatFn({ data: chatInfo.id });
+      toast.success('Chat deleted successfully');
+      navigate({
+        to: '/chat',
+      });
+    } catch (error: any) {
+      toast.error(`Chat delete failed: ${error.message}`);
+      return;
+    }
+  };
+
   return (
-    <header className="flex items-center gap-4 border-b p-6">
+    <header className="flex items-center gap-2 border-b p-6">
       {chatInfo.imageUrl ? (
         <Avatar key={chatInfo.id} className={cn(isOnline && 'ring-3 ring-green-500')}>
           <AvatarImage src={chatInfo.imageUrl ?? undefined} />
@@ -32,6 +53,17 @@ export function ChatHeader({ isOnline, participants, chatInfo }: ChatHeaderProps
       <h1 className="flex-1 text-xl font-semibold">
         {chatInfo.name ? chatInfo.name : participants.map((p) => p.name).join(', ')}
       </h1>
+      {chatInfo.type === 'group' && (
+        <AlertButton
+          title="Delete chat"
+          description="Are you sure you want to delete this chat? This action cannot be undone."
+          onClick={handleDeleteChat}
+        >
+          <Button variant="destructive" size="icon-lg">
+            <Trash />
+          </Button>
+        </AlertButton>
+      )}
       <ChatSettingsDialog chatInfo={chatInfo} />
     </header>
   );
